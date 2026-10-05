@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Module>
+  <Id value="BannerlordPlusPlus"/>
+  <Name value="BannerlordPlusPlus"/>
+  <Version value="v1.0.0"/>
+  <SingleplayerModule value="true"/>
+  <MultiplayerModule value="false"/>
+  <DependedModules>
+    <!-- Harmony Bağımlılığı -->
+    <DependedModule Id="Bannerlord.Harmony" DependentVersion="v2.2.2"/>
+    <!-- Native Oyun Bağımlılıkları -->
+    <DependedModule Id="Native"/>
+    <DependedModule Id="SandBoxCore"/>
+    <DependedModule Id="Sandbox"/>
+    <DependedModule Id="CustomBattle"/>
+    <DependedModule Id="StoryMode"/>
+  </DependedModules>
+  <SubModules>
+    <SubModule>
+      <Name value="BannerlordPlusPlus"/>
+      <DLLName value="BannerlordPlusPlus.dll"/>
+      <SubModuleClassType value="BannerlordPlusPlus.SubModule"/>
+      <Tags>
+        <Tag key="DedicatedServerType" value="None"/>
+        <Tag key="IsServerSubModule" value="false"/>
+      </Tags>
+    </SubModule>
+  </SubModules>
+  <Xmls/>
+</Module>

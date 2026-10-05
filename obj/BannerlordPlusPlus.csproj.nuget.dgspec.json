@@ -1,0 +1,59 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\cex\\Desktop\\BannerlordPlusPlusa\\BannerlordPlusPlus.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\cex\\Desktop\\BannerlordPlusPlusa\\BannerlordPlusPlus.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\cex\\Desktop\\BannerlordPlusPlusa\\BannerlordPlusPlus.csproj",
+        "projectName": "BannerlordPlusPlus",
+        "projectPath": "C:\\Users\\cex\\Desktop\\BannerlordPlusPlusa\\BannerlordPlusPlus.csproj",
+        "packagesPath": "C:\\Users\\cex\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\cex\\Desktop\\BannerlordPlusPlusa\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\cex\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net472"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net472": {
+            "targetAlias": "net472",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "net472": {
+          "targetAlias": "net472",
+          "dependencies": {
+            "Microsoft.NETFramework.ReferenceAssemblies": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[1.0.3, )",
+              "autoReferenced": true
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

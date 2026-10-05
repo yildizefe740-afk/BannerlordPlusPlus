@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "9g/LiU8J6nU=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\cex\\Desktop\\BannerlordPlusPlusa\\BannerlordPlusPlus.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\cex\\.nuget\\packages\\microsoft.netframework.referenceassemblies\\1.0.3\\microsoft.netframework.referenceassemblies.1.0.3.nupkg.sha512",
+    "C:\\Users\\cex\\.nuget\\packages\\microsoft.netframework.referenceassemblies.net472\\1.0.3\\microsoft.netframework.referenceassemblies.net472.1.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

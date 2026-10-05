@@ -1,36 +1,33 @@
-using System.Linq;
-using TaleWorlds.CampaignSystem;
 using TaleWorlds.SaveSystem;
+using TaleWorlds.CampaignSystem;
 
 namespace BannerlordPlusPlus
 {
     public class TradeAgreement
     {
-        [SaveableProperty(1)]
-        public string Kingdom1Id { get; set; }
+        [SaveableField(1)]
+        public string Kingdom1Id;
 
-        [SaveableProperty(2)]
-        public string Kingdom2Id { get; set; }
+        [SaveableField(2)]
+        public string Kingdom2Id;
 
-        [SaveableProperty(3)]
-        public float TarrifReduction { get; set; }
+        [SaveableField(3)]
+        public float DiscountRate;
 
-        [SaveableProperty(4)]
-        public double ExpirationDateDays { get; set; }
+        [SaveableField(4)]
+        public double ExpirationDateDays;
 
+        // Bannerlord SaveSystem için BOŞ CONSTRUCTOR ZORUNLUDUR!
         public TradeAgreement() { }
 
-        public TradeAgreement(Kingdom k1, Kingdom k2, float reduction)
+        public TradeAgreement(Kingdom k1, Kingdom k2, float discountRate, double durationDays)
         {
-            Kingdom1Id = k1?.StringId;
-            Kingdom2Id = k2?.StringId;
-            TarrifReduction = reduction;
-            ExpirationDateDays = CampaignTime.Now.ToDays + 100;
+            Kingdom1Id = k1.StringId;
+            Kingdom2Id = k2.StringId;
+            DiscountRate = discountRate;
+            ExpirationDateDays = CampaignTime.Now.ToDays + durationDays;
         }
 
         public bool IsExpired => CampaignTime.Now.ToDays >= ExpirationDateDays;
-
-        public Kingdom Kingdom1 => Kingdom.All.FirstOrDefault(k => k != null && k.StringId == Kingdom1Id);
-        public Kingdom Kingdom2 => Kingdom.All.FirstOrDefault(k => k != null && k.StringId == Kingdom2Id);
     }
 }

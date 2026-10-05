@@ -16,8 +16,14 @@ namespace BannerlordPlusPlus
 
         public override void SyncData(IDataStore dataStore)
         {
-            dataStore.SyncData("BannerlordPlusPlus_TradeAgreements", ref _activeAgreements);
+            if (_activeAgreements == null)
+            {
+                _activeAgreements = new List<TradeAgreement>();
+            }
+
+            dataStore.SyncData("BPP_TradeAgreements", ref _activeAgreements);
         }
+        
 
         private void OnDailyTick()
         {

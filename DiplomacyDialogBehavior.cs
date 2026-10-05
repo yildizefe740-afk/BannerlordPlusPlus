@@ -4,6 +4,7 @@ using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.GameMenus;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
+using TaleWorlds.Localization;
 
 namespace BannerlordPlusPlus
 {
@@ -191,5 +192,57 @@ namespace BannerlordPlusPlus
                     }
                 }, null));
         }
+
+
+                public static void OnOfferAgreement(Kingdom selectedKingdom, DiplomacyEvaluator.ProposalType proposalType)
+        {
+            Kingdom playerKingdom = Clan.PlayerClan.Kingdom;
+
+            // Kabul değerlendirmesi yapılır
+            bool isAccepted = DiplomacyEvaluator.EvaluateProposal(playerKingdom, selectedKingdom, proposalType, out string reason);
+
+            if (isAccepted)
+            {
+                // Teklif türüne göre ilgili behavior çağrılır
+                switch (proposalType)
+{
+    case DiplomacyEvaluator.ProposalType.TradeAgreement:
+        var tradeAgreement = new TradeAgreement(playerKingdom, selectedKingdom, 0.20f, 60.0);
+        Campaign.Current.GetCampaignBehavior<TradeAgreementBehavior>()?.AddAgreement(tradeAgreement);
+        
+        ShowResultPopup(
+            new TextObject("{=bpp_accepted_title}Teklif Kabul Edildi").ToString(),
+            new TextObject($"{{=bpp_trade_accepted}}{selectedKingdom.Name} teklifinizi kabul etti! Ticaret anlaşması 60 gün geçerli kalacak.").ToString()
+        );
+        break;
+
+    case DiplomacyEvaluator.ProposalType.DefensivePact:
+        var defensivePact = new DefensivePact(playerKingdom, selectedKingdom, 60.0);
+        Campaign.Current.GetCampaignBehavior<DefensivePactBehavior>()?.AddPact(defensivePact);
+        
+        ShowResultPopup(
+            new TextObject("{=bpp_accepted_title}Teklif Kabul Edildi").ToString(),
+            new TextObject($"{{=bpp_pact_accepted}}{selectedKingdom.Name} ile Savunma Paktı başarıyla imzalandı!").ToString()
+        );
+        break;
+        }
+            }
+            else
+            {
+                // Reddedilme bildirimi
+                ShowResultPopup(
+                    new TextObject("{=bpp_rejected_title}Teklif Reddedildi").ToString(),
+                    new TextObject($"{{=bpp_rejected_msg}}{selectedKingdom.Name} teklifi reddetti.\n\nGerekçe: {reason}").ToString()
+                );
+            }
+        }
+
+        private static void ShowResultPopup(string title, string text)
+        {
+            InformationManager.ShowInquiry(new InquiryData(
+                title, text, true, false, new TextObject("{=bpp_ok}Tamam").ToString(), "", null, null));
+        }
     }
 }
+        
+    

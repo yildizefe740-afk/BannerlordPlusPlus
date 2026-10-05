@@ -20,13 +20,13 @@ namespace BannerlordPlusPlus
         // Save/Load ve Deserialization için boş constructor şart
         public DefensivePact() { }
 
-        public DefensivePact(Kingdom k1, Kingdom k2)
-        {
-            Kingdom1Id = k1.StringId;
-            Kingdom2Id = k2.StringId;
-            ExpirationDateDays = CampaignTime.Now.ToDays + 100;
-            IsCalled = false;
-        }
+        public DefensivePact(Kingdom k1, Kingdom k2, double durationDays = 100)
+{
+        Kingdom1Id = k1.StringId;
+        Kingdom2Id = k2.StringId;
+        ExpirationDateDays = CampaignTime.Now.ToDays + durationDays;
+        IsCalled = false;
+}
 
         // Anlık olarak hesaplanan Dinamik Property'ler
         public bool IsExpired => CampaignTime.Now.ToDays >= ExpirationDateDays;

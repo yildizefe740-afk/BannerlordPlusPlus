@@ -16,14 +16,14 @@ namespace BannerlordPlusPlus
 
             if (proposer == null || target == null)
             {
-                reason = "Geçersiz krallık bilgisi.";
+                reason = "Kingdom do not exist.";
                 return false;
             }
 
             // 1. Kural: Savaş halindeyken pakt teklif edilemez
             if (proposer.IsAtWarWith(target))
             {
-                reason = "Halihazırda savaş halindeyiz!";
+                reason = "Are you mad we are already fighting!";
                 return false;
             }
 
@@ -31,7 +31,7 @@ namespace BannerlordPlusPlus
             var peaceBehavior = CustomPeaceBehavior.Instance;
             if (peaceBehavior != null && peaceBehavior.HasActiveTruce(proposer, target))
             {
-                reason = "Savaştan henüz yeni çıktık. Krallık meclisimiz şu an bir paktı onaylamıyor.";
+                reason = "We can not make an agreement.";
                 return false;
             }
 
@@ -68,15 +68,15 @@ namespace BannerlordPlusPlus
             // Reddedilme Gerekçesini Belirleme
             if (powerRatio < 0.3f)
             {
-                reason = "Krallığınızı bizimle eşit bir diplomatik muhatap olarak görecek kadar güçlü bulmuyoruz.";
+                reason = "Your Kingdom is not a match for my kingdom.";
             }
             else if (relation < 0)
             {
-                reason = "Klanlarımız arasındaki soğuk ilişkiler bu anlaşmaya engel oluyor.";
+                reason = "Because of Cold relations between our kingdom we can not make a deal.";
             }
             else
             {
-                reason = "Krallık konseyimiz bu teklifi mevcut konjonktürde stratejik olarak uygun bulmuyor.";
+                reason = "Our Lords dont want to make a deal.";
             }
 
             return false;

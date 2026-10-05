@@ -1,24 +1,38 @@
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Settlements;
+using TaleWorlds.SaveSystem;
 
 namespace BannerlordPlusPlus
 {
     public class PeaceAgreement
     {
+        [SaveableProperty(1)]
         public Kingdom WinnerKingdom { get; set; }
+        
+        [SaveableProperty(2)]
         public Kingdom LooserKingdom { get; set; }
+        
+        [SaveableProperty(3)]
         public PeaceDealOptions SelectedOptions { get; set; }
+        
+        [SaveableProperty(6)]
         public int WarReparationAmount { get; set; }
+        
+        [SaveableProperty(5)]
         public Settlement CededSettlement { get; set; }
         public SubjectType TargetSubjectType;
 
         // Ateşkes süre takibi
+        
+        [SaveableProperty(7)]
         public double TruceDurationDays { get; set; }
+        
+        [SaveableProperty(8)]
         public double CreationDay { get; set; }
 
         public PeaceAgreement()
         {
-            CreationDay = CampaignTime.Now.ToDays;
+    
         }
 
         // CustomPeaceBehavior'ın aradığı 3 parametreli constructor

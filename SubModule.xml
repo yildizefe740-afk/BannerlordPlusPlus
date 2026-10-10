@@ -7,7 +7,7 @@
   <MultiplayerModule value="false"/>
   <DependedModules>
     <!-- Harmony Bağımlılığı -->
-    <DependedModule Id="Bannerlord.Harmony" DependentVersion="v2.2.2"/>
+    <DependedModule Id="Bannerlord.Harmony" DependentVersion="v2.4.2"/>
     <!-- Native Oyun Bağımlılıkları -->
     <DependedModule Id="Native"/>
     <DependedModule Id="SandBoxCore"/>

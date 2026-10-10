@@ -56,15 +56,12 @@ namespace BannerlordPlusPlus
         {
             IsExecutingCustomPeace = true;
 
-            // 1. Oyunun varsayılan barış aksiyonu
             MakePeaceAction.Apply(k1, k2);
 
-            // 2. CK3 Tarzı Uzun Soluklu Truce (Minimum 100 Gün, Truce seçildiyse 200 Gün)
             double truceDuration = options.HasFlag(PeaceDealOptions.Truce) ? 200.0 : 100.0;
             _activeTruces.RemoveAll(a => a.Involves(k1, k2));
             _activeTruces.Add(new PeaceAgreement(k1, k2, truceDuration));
 
-            // 3. PlunderTreasury: Krallık hazinesini BÜTÜNÜYLE yağmalama
             if (options.HasFlag(PeaceDealOptions.PlunderTreasury))
             {
                 int loserTreasury = TreasuryBehavior.GetTreasury(k2);
@@ -78,13 +75,11 @@ namespace BannerlordPlusPlus
                 }
             }
 
-            // 4. WarReparation: Ateşkes süresince ödenmek üzere tazminat bağlama
             if (options.HasFlag(PeaceDealOptions.WarReparation))
             {
                 _reparationTargets[k1.StringId] = k2.StringId;
             }
 
-            // 5. Subjectize / ExecuteRuler Diğer Opsiyonlar
             if (options.HasFlag(PeaceDealOptions.Subjectize))
             {
                 SubjectBehavior.Instance?.AddSubject(k1, k2);
@@ -122,7 +117,6 @@ namespace BannerlordPlusPlus
                 MakePeaceAction.Apply(senior, junior);
             }
 
-            // İsyan savaşlarında 150 günlük uzun ateşkes süresi
             _activeTruces.RemoveAll(a => a.Involves(senior, junior));
             _activeTruces.Add(new PeaceAgreement(senior, junior, 150.0));
 
@@ -143,10 +137,8 @@ namespace BannerlordPlusPlus
 
         private void OnDailyTick()
         {
-            // Süresi dolan Truce'ları temizle
-            _activeTruces.RemoveAll(a => a.IsExpired);
+            _activeTruces.RemoveAll(a => a == null || a.IsExpired);
 
-            // WarReparation: ATEŞKES SÜRDÜĞÜ SÜRECE her gün %10 Krallık GELİRİ transferi
             List<string> winnerIds = _reparationTargets.Keys.ToList();
             foreach (var winnerId in winnerIds)
             {
@@ -154,27 +146,32 @@ namespace BannerlordPlusPlus
                 Kingdom winner = Kingdom.All.FirstOrDefault(k => k.StringId == winnerId);
                 Kingdom loser = Kingdom.All.FirstOrDefault(k => k.StringId == loserId);
 
-                if (winner != null && loser != null)
+                // Krallıklardan biri yok olduysa veya null ise listeden çıkar
+                if (winner == null || loser == null || winner.IsEliminated || loser.IsEliminated)
                 {
-                    // Ateşkes bittiyse tazminat da otomatik kesilir
-                    if (!HasActiveTruce(winner, loser))
-                    {
-                        _reparationTargets.Remove(winnerId);
-                        continue;
-                    }
+                    _reparationTargets.Remove(winnerId);
+                    continue;
+                }
 
-                    // Günlük Krallık Gelirinin %10'u hesaplanır
-                    int dailyIncome = 0;
-                    foreach (var settlement in loser.Settlements)
+                if (!HasActiveTruce(winner, loser))
+                {
+                    _reparationTargets.Remove(winnerId);
+                    continue;
+                }
+
+                int dailyIncome = 0;
+                foreach (var settlement in loser.Settlements)
+                {
+                    if (settlement != null)
                     {
                         dailyIncome += (int)(settlement.Town?.TradeTaxAccumulated ?? 100) + 200;
                     }
-
-                    int reparationAmount = (int)(dailyIncome * 0.10f);
-
-                    TreasuryBehavior.AddToTreasury(loser, -reparationAmount);
-                    TreasuryBehavior.AddToTreasury(winner, reparationAmount);
                 }
+
+                int reparationAmount = (int)(dailyIncome * 0.10f);
+
+                TreasuryBehavior.AddToTreasury(loser, -reparationAmount);
+                TreasuryBehavior.AddToTreasury(winner, reparationAmount);
             }
         }
     }

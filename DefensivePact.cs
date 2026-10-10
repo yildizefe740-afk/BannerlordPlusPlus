@@ -29,5 +29,7 @@ namespace BannerlordPlusPlus
         }
 
         public bool IsExpired => CampaignTime.Now.ToDays >= ExpirationDateDays;
+
+        public bool CanCall => !IsCalled && !IsExpired;
     }
 }

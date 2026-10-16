@@ -8,7 +8,7 @@
   <DependedModules>
     <!-- Harmony Bağımlılığı -->
     <DependedModule Id="Bannerlord.Harmony" DependentVersion="v2.4.2"/>
-    <!-- Native Oyun Bağımlılıkları -->
+    <!-- Native Oyun Bağımlılıkları (Sürüm yazılmaz) -->
     <DependedModule Id="Native"/>
     <DependedModule Id="SandBoxCore"/>
     <DependedModule Id="Sandbox"/>

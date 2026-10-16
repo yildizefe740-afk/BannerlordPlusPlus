@@ -16,67 +16,67 @@ namespace BannerlordPlusPlus
 
             if (proposer == null || target == null)
             {
-                reason = "Kingdom do not exist.";
+                reason = "Kingdom does not exist.";
                 return false;
             }
 
-            // 1. Kural: Savaş halindeyken pakt teklif edilemez
+            // Rule 1: Cannot propose pacts while at war
             if (proposer.IsAtWarWith(target))
             {
-                reason = "Are you mad we are already fighting!";
+                reason = "Are you out of your mind? We are already at war!";
                 return false;
             }
 
-            // 2. Kural: Taze Ateşkes Kontrolü (Döv-sal / exploit engeli)
+            // Rule 2: Active Truce Check (Exploit prevention)
             var peaceBehavior = CustomPeaceBehavior.Instance;
             if (peaceBehavior != null && peaceBehavior.HasActiveTruce(proposer, target))
             {
-                reason = "We can not make an agreement.";
+                reason = "We are bound by an active truce and cannot make an agreement right now.";
                 return false;
             }
 
-            // --- Skora Dayalı AI Değerlendirmesi ---
+            // --- Score-Based AI Evaluation ---
             float score = 0f;
 
-            // Klan İlişkisi (-100 ile +100 arası)
+            // Clan Relations (-100 to +100)
             float relation = target.RulingClan.GetRelationWithClan(proposer.RulingClan);
-            score += relation * 0.5f; // Maksimum +50 veya -50 puan
+            score += relation * 0.5f; // Max +50 or -50 points
 
-            // Güç Oranı (Askeri Güç Denge Hesabı)
+            // Power Ratio Balance
             float proposerPower = proposer.CurrentTotalStrength;
             float targetPower = target.CurrentTotalStrength + 1f;
             float powerRatio = proposerPower / targetPower;
 
             if (powerRatio < 0.3f)
             {
-                score -= 35f; // Krallık çok zayıfsa ciddi eksi puan
+                score -= 35f; // Severe penalty if kingdom is too weak
             }
             else if (powerRatio > 1.2f)
             {
-                score += 15f; // Krallık güçlü veya dengeliyse artı puan
+                score += 15f; // Bonus if kingdom is strong or well-matched
             }
 
-            // Teklif Türüne Göre Kabul Eşiği (Threshold)
+            // Threshold based on proposal type
             float requiredScore = (type == ProposalType.DefensivePact) ? 25f : 10f;
 
             if (score >= requiredScore)
             {
-                reason = "Anlaşma kabul edildi.";
+                reason = "Proposal accepted.";
                 return true;
             }
 
-            // Reddedilme Gerekçesini Belirleme
+            // Rejection Reasons
             if (powerRatio < 0.3f)
             {
-                reason = "Your Kingdom is not a match for my kingdom.";
+                reason = "Your kingdom is far too weak to be considered a worthy partner.";
             }
             else if (relation < 0)
             {
-                reason = "Because of Cold relations between our kingdom we can not make a deal.";
+                reason = "Due to our strained relations, our lords refuse to entertain this deal.";
             }
             else
             {
-                reason = "Our Lords dont want to make a deal.";
+                reason = "Our council does not find this agreement advantageous at this time.";
             }
 
             return false;

@@ -17,7 +17,7 @@ namespace BannerlordPlusPlus
 
         public override void SyncData(IDataStore dataStore)
         {
-            // Kaydedilecek ekstra veri yok
+            // No extra data to save
         }
 
         private void OnSessionLaunched(CampaignGameStarter starter)
@@ -26,21 +26,20 @@ namespace BannerlordPlusPlus
             AddDiplomacyTownMenu(starter);
         }
 
-        // --- 1. NPC DİYALOG SİSTEMİ ---
+        // --- 1. NPC DIALOGUE SYSTEM ---
         private void AddDiplomacyDialogs(CampaignGameStarter starter)
         {
-            // Kale/Şehir yetkilisi (Chamberlain / Fortification Guard / Lord) ile konuşurken çıkan diplomasi seçeneği
             starter.AddPlayerLine("diplomacy_main_option", "hero_main_options", "diplomacy_talk_response", 
-                "Krallığımızın diplomasi ve ticaret durumunu görüşmek istiyorum.", 
+                "I want to learn the diplomatic situation of our kingdom.", 
                 IsDiplomacyAvailable, null);
 
             starter.AddDialogLine("diplomacy_response", "diplomacy_talk_response", "diplomacy_options_list", 
-                "Emredin efendim, hangi diplomasi konusunu değerlendirmek istersiniz?", 
+                "As you wish, your Grace. What would you like to know?", 
                 null, null);
 
-            // Seçenek 1: Krallık Kasası
+            // Option 1: Kingdom Treasury
             starter.AddPlayerLine("diplomacy_check_treasury", "diplomacy_options_list", "diplomacy_talk_response", 
-                "Krallık kasasında ne kadar dinarımız var?", 
+                "Treasury", 
                 null, 
                 () => {
                     if (Hero.MainHero.MapFaction is Kingdom playerKingdom)
@@ -49,27 +48,27 @@ namespace BannerlordPlusPlus
                     }
                 });
 
-            // Seçenek 2: Ticaret Anlaşması Öner
+            // Option 2: Propose Trade Agreement
             starter.AddPlayerLine("diplomacy_propose_trade", "diplomacy_options_list", "diplomacy_talk_response", 
-                "Başka bir krallığa ticaret anlaşması teklif etmek istiyorum.", 
+                "I want to propose a trade agreement to a kingdom.", 
                 null, 
                 OpenTradeAgreementInquiry);
 
-            // Seçenek 3: Savunma Paktı Öner
+            // Option 3: Propose Defensive Pact
             starter.AddPlayerLine("diplomacy_propose_pact", "diplomacy_options_list", "diplomacy_talk_response", 
-                "Başka bir krallığa savunma paktı teklif etmek istiyorum.", 
+                "I want to propose a defensive pact to a kingdom.", 
                 null, 
                 OpenDefensivePactInquiry);
 
-            // Geri Dönüş
+            // Back
             starter.AddPlayerLine("diplomacy_back", "diplomacy_options_list", "hero_main_options", 
-                "Şimdilik bu kadar, sağ olasın.", null, null);
+                "That's all, thank you.", null, null);
         }
 
-        // --- 2. ŞEHİR / KALE MENÜSÜ SEÇENEĞİ ---
+        // --- 2. TOWN / FORTIFICATION MENU ---
         private void AddDiplomacyTownMenu(CampaignGameStarter starter)
         {
-            starter.AddGameMenuOption("town", "town_diplomacy_option", "Diplomasi İşlerini Yönet",
+            starter.AddGameMenuOption("town", "town_diplomacy_option", "Kingdom Action",
                 (MenuCallbackArgs args) =>
                 {
                     args.optionLeaveType = GameMenuOption.LeaveType.Submenu;
@@ -80,14 +79,13 @@ namespace BannerlordPlusPlus
                     GameMenu.SwitchToMenu("diplomacy_town_menu");
                 }, false, 4);
 
-            // Alt Menü (GameOverlays parametresi kaldırıldı, tertemiz geçiyor)
-            starter.AddGameMenu("diplomacy_town_menu", "Diplomasi ve Dış İlişkiler Masası",
+            starter.AddGameMenu("diplomacy_town_menu", "Diplomacy",
                 (MenuCallbackArgs args) =>
                 {
                     args.MenuContext.SetBackgroundMeshName("town_wait");
                 });
 
-            starter.AddGameMenuOption("diplomacy_town_menu", "menu_treasury", "Krallık Kasasını İncele",
+            starter.AddGameMenuOption("diplomacy_town_menu", "menu_treasury", "Visit Treasury",
                 (MenuCallbackArgs args) => true,
                 (MenuCallbackArgs args) =>
                 {
@@ -95,15 +93,15 @@ namespace BannerlordPlusPlus
                         TreasuryBehavior.ShowTreasuryInfo(playerKingdom);
                 });
 
-            starter.AddGameMenuOption("diplomacy_town_menu", "menu_trade_pact", "Ticaret Anlaşması Teklif Et",
+            starter.AddGameMenuOption("diplomacy_town_menu", "menu_trade_pact", "Propose a trade agreement",
                 (MenuCallbackArgs args) => true,
                 (MenuCallbackArgs args) => OpenTradeAgreementInquiry());
 
-            starter.AddGameMenuOption("diplomacy_town_menu", "menu_defensive_pact", "Savunma Paktı Teklif Et",
+            starter.AddGameMenuOption("diplomacy_town_menu", "menu_defensive_pact", "Propose a defensive pact",
                 (MenuCallbackArgs args) => true,
                 (MenuCallbackArgs args) => OpenDefensivePactInquiry());
 
-            starter.AddGameMenuOption("diplomacy_town_menu", "menu_back", "Geri Dön",
+            starter.AddGameMenuOption("diplomacy_town_menu", "menu_back", "Return",
                 (MenuCallbackArgs args) => true,
                 (MenuCallbackArgs args) => GameMenu.SwitchToMenu("town"));
         }
@@ -113,7 +111,7 @@ namespace BannerlordPlusPlus
             return Hero.MainHero.MapFaction is Kingdom kingdom && !kingdom.IsEliminated;
         }
 
-        // --- TİCARET ANLAŞMASI SEÇİM POPUP'I ---
+        // --- TRADE AGREEMENT INQUIRY ---
         private void OpenTradeAgreementInquiry()
         {
             var playerKingdom = Hero.MainHero.MapFaction as Kingdom;
@@ -124,36 +122,35 @@ namespace BannerlordPlusPlus
 
             if (!targetKingdoms.Any())
             {
-                InformationManager.DisplayMessage(new InformationMessage("Ticaret anlaşması yapabileceğiniz barışçıl bir krallık bulunmuyor."));
+                InformationManager.DisplayMessage(new InformationMessage("There are no available kingdoms for a trade agreement."));
                 return;
             }
 
             List<InquiryElement> elements = new();
             foreach (var kingdom in targetKingdoms)
             {
-                bool hasPact = tradeBehavior != null && tradeBehavior.HasTradeAgreement(playerKingdom, kingdom);
-                string text = hasPact ? $"{kingdom.Name} (Zaten Aktif Anlaşma Var)" : kingdom.Name.ToString();
-                elements.Add(new InquiryElement(kingdom, text, null, !hasPact, ""));
+                bool hasAgreement = tradeBehavior != null && tradeBehavior.HasTradeAgreement(playerKingdom, kingdom);
+                string text = hasAgreement ? $"{kingdom.Name} (Active Agreement Exists)" : kingdom.Name.ToString();
+                elements.Add(new InquiryElement(kingdom, text, null, !hasAgreement, ""));
             }
 
             MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
-                "Ticaret Anlaşması",
-                "Ticaret anlaşması teklif etmek istediğiniz krallığı seçin (60 Günlük - %20 İndirim):",
+                "Trade Agreement",
+                "Choose a kingdom to propose a trade agreement:",
                 elements,
                 true, 1, 1,
-                "Teklif Et", "İptal",
+                "Propose", "Cancel",
                 (List<InquiryElement> selected) =>
                 {
                     var selectedKingdom = selected.FirstOrDefault()?.Identifier as Kingdom;
-                    if (selectedKingdom != null && tradeBehavior != null)
+                    if (selectedKingdom != null)
                     {
-                        tradeBehavior.AddAgreement(new TradeAgreement(playerKingdom, selectedKingdom, 0.20f, 60.0));
-                        InformationManager.DisplayMessage(new InformationMessage($"{selectedKingdom.Name} ile Ticaret Anlaşması imzalandı!"));
+                        OnOfferAgreement(selectedKingdom, DiplomacyEvaluator.ProposalType.TradeAgreement);
                     }
                 }, null));
         }
 
-        // --- SAVUNMA PAKTI SEÇİM POPUP'I ---
+        // --- DEFENSIVE PACT INQUIRY ---
         private void OpenDefensivePactInquiry()
         {
             var playerKingdom = Hero.MainHero.MapFaction as Kingdom;
@@ -164,7 +161,7 @@ namespace BannerlordPlusPlus
 
             if (!targetKingdoms.Any())
             {
-                InformationManager.DisplayMessage(new InformationMessage("Savunma Paktı teklif edebileceğiniz uygun bir krallık bulunmuyor."));
+                InformationManager.DisplayMessage(new InformationMessage("There are no available kingdoms for a defensive pact."));
                 return;
             }
 
@@ -172,67 +169,64 @@ namespace BannerlordPlusPlus
             foreach (var kingdom in targetKingdoms)
             {
                 bool hasPact = pactBehavior != null && pactBehavior.HasDefensivePact(playerKingdom, kingdom);
-                string text = hasPact ? $"{kingdom.Name} (Aktif Pakt Var)" : kingdom.Name.ToString();
+                string text = hasPact ? $"{kingdom.Name} (Active Pact Exists)" : kingdom.Name.ToString();
                 elements.Add(new InquiryElement(kingdom, text, null, !hasPact, ""));
             }
 
             MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
-                "Savunma Paktı",
-                "Savunma paktı imzalamak istediğiniz krallığı seçin (60 Günlük):",
+                "Defensive Pact",
+                "Choose a kingdom to propose a defensive pact (60 Days):",
                 elements,
                 true, 1, 1,
-                "Pakt Yap", "İptal",
+                "Propose", "Cancel",
                 (List<InquiryElement> selected) =>
                 {
                     var selectedKingdom = selected.FirstOrDefault()?.Identifier as Kingdom;
-                    if (selectedKingdom != null && pactBehavior != null)
+                    if (selectedKingdom != null)
                     {
-                        pactBehavior.AddPact(new DefensivePact(playerKingdom, selectedKingdom, 60.0));
-                        InformationManager.DisplayMessage(new InformationMessage($"{selectedKingdom.Name} ile Savunma Paktı imzalandı!"));
+                        OnOfferAgreement(selectedKingdom, DiplomacyEvaluator.ProposalType.DefensivePact);
                     }
                 }, null));
         }
 
-
-                public static void OnOfferAgreement(Kingdom selectedKingdom, DiplomacyEvaluator.ProposalType proposalType)
+        // --- EVALUATION & RESULT PROCESSOR ---
+        public static void OnOfferAgreement(Kingdom selectedKingdom, DiplomacyEvaluator.ProposalType proposalType)
         {
             Kingdom playerKingdom = Clan.PlayerClan.Kingdom;
 
-            // Kabul değerlendirmesi yapılır
+            // Evaluate proposal via DiplomacyEvaluator AI logic
             bool isAccepted = DiplomacyEvaluator.EvaluateProposal(playerKingdom, selectedKingdom, proposalType, out string reason);
 
             if (isAccepted)
             {
-                // Teklif türüne göre ilgili behavior çağrılır
                 switch (proposalType)
-{
-    case DiplomacyEvaluator.ProposalType.TradeAgreement:
-        var tradeAgreement = new TradeAgreement(playerKingdom, selectedKingdom, 0.20f, 60.0);
-        Campaign.Current.GetCampaignBehavior<TradeAgreementBehavior>()?.AddAgreement(tradeAgreement);
-        
-        ShowResultPopup(
-            new TextObject("{=bpp_accepted_title}Teklif Kabul Edildi").ToString(),
-            new TextObject($"{{=bpp_trade_accepted}}{selectedKingdom.Name} teklifinizi kabul etti! Ticaret anlaşması 60 gün geçerli kalacak.").ToString()
-        );
-        break;
+                {
+                    case DiplomacyEvaluator.ProposalType.TradeAgreement:
+                        var tradeAgreement = new TradeAgreement(playerKingdom, selectedKingdom, 0.20f, 60.0);
+                        Campaign.Current.GetCampaignBehavior<TradeAgreementBehavior>()?.AddAgreement(tradeAgreement);
+                        
+                        ShowResultPopup(
+                            "Proposal Accepted",
+                            $"{selectedKingdom.Name} has accepted your proposal! The trade agreement will remain active for 60 days."
+                        );
+                        break;
 
-    case DiplomacyEvaluator.ProposalType.DefensivePact:
-        var defensivePact = new DefensivePact(playerKingdom, selectedKingdom, 60.0);
-        Campaign.Current.GetCampaignBehavior<DefensivePactBehavior>()?.AddPact(defensivePact);
-        
-        ShowResultPopup(
-            new TextObject("{=bpp_accepted_title}Teklif Kabul Edildi").ToString(),
-            new TextObject($"{{=bpp_pact_accepted}}{selectedKingdom.Name} ile Savunma Paktı başarıyla imzalandı!").ToString()
-        );
-        break;
-        }
+                    case DiplomacyEvaluator.ProposalType.DefensivePact:
+                        var defensivePact = new DefensivePact(playerKingdom, selectedKingdom, 60.0);
+                        Campaign.Current.GetCampaignBehavior<DefensivePactBehavior>()?.AddPact(defensivePact);
+                        
+                        ShowResultPopup(
+                            "Proposal Accepted",
+                            $"{selectedKingdom.Name} has agreed to sign a Defensive Pact with us!"
+                        );
+                        break;
+                }
             }
             else
             {
-                // Reddedilme bildirimi
                 ShowResultPopup(
-                    new TextObject("{=bpp_rejected_title}Teklif Reddedildi").ToString(),
-                    new TextObject($"{{=bpp_rejected_msg}}{selectedKingdom.Name} teklifi reddetti.\n\nGerekçe: {reason}").ToString()
+                    "Proposal Rejected",
+                    $"{selectedKingdom.Name} rejected your proposal.\n\nReason: {reason}"
                 );
             }
         }
@@ -240,9 +234,7 @@ namespace BannerlordPlusPlus
         private static void ShowResultPopup(string title, string text)
         {
             InformationManager.ShowInquiry(new InquiryData(
-                title, text, true, false, new TextObject("{=bpp_ok}Tamam").ToString(), "", null, null));
+                title, text, true, false, "Okay", "", null, null));
         }
     }
 }
-        
-    

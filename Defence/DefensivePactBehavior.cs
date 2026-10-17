@@ -65,8 +65,8 @@ namespace BannerlordPlusPlus
             {
                 if (pact == null) continue;
 
-                bool isPactMemberInvolved = (pact.Kingdom1Id == k1.StringId || pact.Kingdom1Id == k2.StringId) ||
-                                            (pact.Kingdom2Id == k1.StringId || pact.Kingdom2Id == k2.StringId);
+                bool isPactMemberInvolved = pact.Kingdom1Id == k1.StringId || pact.Kingdom1Id == k2.StringId ||
+                                            pact.Kingdom2Id == k1.StringId || pact.Kingdom2Id == k2.StringId;
 
                 if (isPactMemberInvolved && pact.IsCalled)
                 {

@@ -3,6 +3,7 @@ using System.Linq;
 using HarmonyLib;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
+using TaleWorlds.Core;
 
 namespace BannerlordPlusPlus
 {
@@ -37,6 +38,17 @@ namespace BannerlordPlusPlus
             }
         }
 
+        public bool HasNonAggressionPact(Kingdom k1, Kingdom k2)
+        {
+            if (_NApact == null || k1 == null || k2 == null)
+                return false;
+
+            return _NApact.Any(p =>
+                p != null && !p.IsExpired &&
+                ((p.Kingdom1Id == k1.StringId && p.Kingdom2Id == k2.StringId) ||
+                 (p.Kingdom1Id == k2.StringId && p.Kingdom2Id == k1.StringId)));
+        }
+
         [HarmonyPatch(typeof(DeclareWarAction), "ApplyNonAggresion")]
         public class ApplyNonAggresionPact
         {
@@ -58,6 +70,38 @@ namespace BannerlordPlusPlus
 
                 return true;
             }
-        }        
+        }  
+
+        public void ProcessAINAP()
+        {
+            var kingdoms = Kingdom.All.Where(k => k != null && k.IsEliminated).ToList();
+            
+            for(int i = 0; i < kingdoms.Count; i++)
+            {
+                for(int j = i+1 ; j < kingdoms.Count; j++)
+                {
+                    var k1 = kingdoms[i];
+                    var k2 = kingdoms[j];
+
+                    if(k1.IsAtWarWith(k2) || HasNonAggressionPact(k1, k2))
+                    {
+                        continue;
+                    }
+
+                    Clan rulingClan1 = k1.RulingClan;
+                    Clan rulingClan2 = k2.RulingClan;
+
+                    if(rulingClan1 != null && rulingClan2 != null)
+                    {
+                        float relation = rulingClan1.GetRelationWithClan(rulingClan2);
+
+                        if(relation > 15f && MBRandom.RandomFloat < 0.03f)
+                        {
+                            NonAggressionPactBehavior.AddPact(k1, k2, 60.0);
+                        }
+                    }
+                }
+            }
+        }    
     }
 }

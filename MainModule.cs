@@ -26,6 +26,7 @@ namespace BannerlordPlusPlus
                 starter.AddBehavior(new SubjectBehavior());
                 starter.AddBehavior(new TradeAgreementBehavior());
                 starter.AddBehavior(new DefensivePactBehavior());
+                starter.AddBehavior(new NonAggressionPactBehavior());
                 starter.AddBehavior(new TreasuryBehavior());
                 starter.AddBehavior(new CustomPeaceBehavior());
                 starter.AddBehavior(new DiplomacyDialogBehavior());

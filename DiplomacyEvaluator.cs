@@ -7,7 +7,8 @@ namespace BannerlordPlusPlus
         public enum ProposalType
         {
             TradeAgreement,
-            DefensivePact
+            DefensivePact,
+            NonAggressionPact
         }
 
         public static bool EvaluateProposal(Kingdom proposer, Kingdom target, ProposalType type, out string reason)

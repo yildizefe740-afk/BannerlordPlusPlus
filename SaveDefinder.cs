@@ -15,6 +15,7 @@ namespace BannerlordPlusPlus
             AddClassDefinition(typeof(TradeAgreement), 3);
             AddClassDefinition(typeof(PeaceAgreement), 4);
             AddClassDefinition(typeof(MarriagePact), 5);
+            AddClassDefinition(typeof(NonAggressionPact), 8);
         }
 
         protected override void DefineEnumTypes()
@@ -32,6 +33,7 @@ namespace BannerlordPlusPlus
             ConstructContainerDefinition(typeof(List<TradeAgreement>));
             ConstructContainerDefinition(typeof(List<PeaceAgreement>));
             ConstructContainerDefinition(typeof(List<MarriagePact>));
+            ConstructContainerDefinition(typeof(List<NonAggressionPact>));
             ConstructContainerDefinition(typeof(List<SubjectAttributes>));
         }
     }

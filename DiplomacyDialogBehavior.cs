@@ -60,6 +60,11 @@ namespace BannerlordPlusPlus
                 null, 
                 OpenDefensivePactInquiry);
 
+            starter.AddPlayerLine("diplomacy_propose_non_aggression_pact", "diplomacy_options_list", "diplomacy_talk_response",
+                "I want to propose a non-aggression pact to a kingdom.",
+                null,
+                OpenNonAggressionPactInquiry);
+
             // Back
             starter.AddPlayerLine("diplomacy_back", "diplomacy_options_list", "hero_main_options", 
                 "That's all, thank you.", null, null);
@@ -69,41 +74,39 @@ namespace BannerlordPlusPlus
         private void AddDiplomacyTownMenu(CampaignGameStarter starter)
         {
             starter.AddGameMenuOption("town", "town_diplomacy_option", "Kingdom Action",
-                (MenuCallbackArgs args) =>
+                args =>
                 {
                     args.optionLeaveType = GameMenuOption.LeaveType.Submenu;
                     return IsDiplomacyAvailable();
                 },
-                (MenuCallbackArgs args) =>
-                {
-                    GameMenu.SwitchToMenu("diplomacy_town_menu");
-                }, false, 4);
+                args => GameMenu.SwitchToMenu("diplomacy_town_menu"), false, 4);
 
             starter.AddGameMenu("diplomacy_town_menu", "Diplomacy",
-                (MenuCallbackArgs args) =>
-                {
-                    args.MenuContext.SetBackgroundMeshName("town_wait");
-                });
+                args => args.MenuContext.SetBackgroundMeshName("town_wait"));
 
             starter.AddGameMenuOption("diplomacy_town_menu", "menu_treasury", "Visit Treasury",
-                (MenuCallbackArgs args) => true,
-                (MenuCallbackArgs args) =>
+                args => true,
+                args =>
                 {
                     if (Hero.MainHero.MapFaction is Kingdom playerKingdom)
                         TreasuryBehavior.ShowTreasuryInfo(playerKingdom);
                 });
 
             starter.AddGameMenuOption("diplomacy_town_menu", "menu_trade_pact", "Propose a trade agreement",
-                (MenuCallbackArgs args) => true,
-                (MenuCallbackArgs args) => OpenTradeAgreementInquiry());
+                args => true,
+                args => OpenTradeAgreementInquiry());
 
             starter.AddGameMenuOption("diplomacy_town_menu", "menu_defensive_pact", "Propose a defensive pact",
-                (MenuCallbackArgs args) => true,
-                (MenuCallbackArgs args) => OpenDefensivePactInquiry());
+                args => true,
+                args => OpenDefensivePactInquiry());
+
+            starter.AddGameMenuOption("diplomacy_town_menu", "menu_non_aggression_pact", "Propose a non-aggression pact",
+                args => true,
+                args => OpenNonAggressionPactInquiry());
 
             starter.AddGameMenuOption("diplomacy_town_menu", "menu_back", "Return",
-                (MenuCallbackArgs args) => true,
-                (MenuCallbackArgs args) => GameMenu.SwitchToMenu("town"));
+                args => true,
+                args => GameMenu.SwitchToMenu("town"));
         }
 
         private bool IsDiplomacyAvailable()
@@ -126,7 +129,7 @@ namespace BannerlordPlusPlus
                 return;
             }
 
-            List<InquiryElement> elements = new();
+            List<InquiryElement> elements = [];
             foreach (var kingdom in targetKingdoms)
             {
                 bool hasAgreement = tradeBehavior != null && tradeBehavior.HasTradeAgreement(playerKingdom, kingdom);
@@ -140,7 +143,7 @@ namespace BannerlordPlusPlus
                 elements,
                 true, 1, 1,
                 "Propose", "Cancel",
-                (List<InquiryElement> selected) =>
+                selected =>
                 {
                     var selectedKingdom = selected.FirstOrDefault()?.Identifier as Kingdom;
                     if (selectedKingdom != null)
@@ -165,7 +168,7 @@ namespace BannerlordPlusPlus
                 return;
             }
 
-            List<InquiryElement> elements = new();
+            List<InquiryElement> elements = [];
             foreach (var kingdom in targetKingdoms)
             {
                 bool hasPact = pactBehavior != null && pactBehavior.HasDefensivePact(playerKingdom, kingdom);
@@ -179,12 +182,52 @@ namespace BannerlordPlusPlus
                 elements,
                 true, 1, 1,
                 "Propose", "Cancel",
-                (List<InquiryElement> selected) =>
+                selected =>
                 {
                     var selectedKingdom = selected.FirstOrDefault()?.Identifier as Kingdom;
                     if (selectedKingdom != null)
                     {
                         OnOfferAgreement(selectedKingdom, DiplomacyEvaluator.ProposalType.DefensivePact);
+                    }
+                }, null));
+        }
+
+        private void OpenNonAggressionPactInquiry()
+        {
+            var playerKingdom = Hero.MainHero.MapFaction as Kingdom;
+            if (playerKingdom == null) return;
+
+            var pactBehavior = Campaign.Current.GetCampaignBehavior<NonAggressionPactBehavior>();
+            var targetKingdoms = Kingdom.All
+                .Where(k => k != playerKingdom && !k.IsEliminated && !k.IsAtWarWith(playerKingdom))
+                .ToList();
+
+            if (!targetKingdoms.Any())
+            {
+                InformationManager.DisplayMessage(new InformationMessage("There are no available kingdoms for a non-aggression pact."));
+                return;
+            }
+
+            List<InquiryElement> elements = [];
+            foreach (var kingdom in targetKingdoms)
+            {
+                bool hasPact = pactBehavior != null && pactBehavior.HasNonAggressionPact(playerKingdom, kingdom);
+                string text = hasPact ? $"{kingdom.Name} (Active Pact Exists)" : kingdom.Name.ToString();
+                elements.Add(new InquiryElement(kingdom, text, null, !hasPact, ""));
+            }
+
+            MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
+                "Non-Aggression Pact",
+                "Choose a kingdom to propose a non-aggression pact (60 Days):",
+                elements,
+                true, 1, 1,
+                "Propose", "Cancel",
+                selected =>
+                {
+                    var selectedKingdom = selected.FirstOrDefault()?.Identifier as Kingdom;
+                    if (selectedKingdom != null)
+                    {
+                        OnOfferAgreement(selectedKingdom, DiplomacyEvaluator.ProposalType.NonAggressionPact);
                     }
                 }, null));
         }
@@ -218,6 +261,15 @@ namespace BannerlordPlusPlus
                         ShowResultPopup(
                             "Proposal Accepted",
                             $"{selectedKingdom.Name} has agreed to sign a Defensive Pact with us!"
+                        );
+                        break;
+
+                    case DiplomacyEvaluator.ProposalType.NonAggressionPact:
+                        NonAggressionPactBehavior.AddPact(playerKingdom, selectedKingdom, 60.0);
+
+                        ShowResultPopup(
+                            "Proposal Accepted",
+                            $"{selectedKingdom.Name} has agreed to sign a Non-Aggression Pact with us for 60 days!"
                         );
                         break;
                 }

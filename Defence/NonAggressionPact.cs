@@ -29,6 +29,5 @@ namespace BannerlordPlusPlus
 
          public bool IsExpired => CampaignTime.Now.ToDays >= ExpirationDateDays;
 
-        
     }
 }

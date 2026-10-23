@@ -11,15 +11,46 @@ namespace BannerlordPlusPlus
     {
         public override void RegisterEvents()
         {
-            // Event listener register
+            // Bannerlord API'sinde doğru event dinleyici metodu: AddNonSerializedListener
+            CampaignEvents.DailyTickEvent.AddNonSerializedListener(this, OnDailyTick);
         }
 
         public override void SyncData(IDataStore dataStore)
         {
-            // Save/Load sync
+            // Save/Load data synchronization
         }
 
-        // --- HAZİNE HELPER METODLARI ---
+        private void OnDailyTick()
+        {
+            // Iterate through all active kingdoms to collect taxes from subjects
+            foreach (Kingdom kingdom in Kingdom.All)
+            {
+                if (kingdom == null || kingdom.IsEliminated) continue;
+
+                // Obtain the senior/suzerain kingdom if this kingdom is a subject
+                Kingdom seniorKingdom = GetSeniorKingdom(kingdom);
+
+                if (seniorKingdom != null && !seniorKingdom.IsEliminated)
+                {
+                    int taxAmount = SubjectMethods.GetTax(kingdom, 0.10f);
+
+                    if (taxAmount > 0)
+                    {
+                        // Deduct tax from subject treasury and add to senior kingdom treasury
+                        AddToTreasury(kingdom, -taxAmount);
+                        AddToTreasury(seniorKingdom, taxAmount);
+                    }
+                }
+            }
+        }
+
+        private Kingdom GetSeniorKingdom(Kingdom subjectKingdom)
+        {
+            // TODO: Connect your diplomacy/subject relationship management logic here
+            return null;
+        }
+
+        // --- TREASURY HELPER METHODS ---
         public static int GetTreasury(Kingdom kingdom)
         {
             if (kingdom == null) return 0;
@@ -31,7 +62,7 @@ namespace BannerlordPlusPlus
             if (kingdom == null) return;
             kingdom.KingdomBudgetWallet += amount;
             
-            // Sıfırın altına düşmesini engelle
+            // Prevent treasury from dropping below zero
             if (kingdom.KingdomBudgetWallet < 0)
             {
                 kingdom.KingdomBudgetWallet = 0;
@@ -54,7 +85,7 @@ namespace BannerlordPlusPlus
                     int taxAmount = (int)(dailyProfit * 0.15f);
                     __result -= taxAmount;
 
-                    TextObject taxText = new("{=caravan_tax}Market/Caravan Tax %15");
+                    TextObject taxText = new("{=caravan_tax}Market/Caravan Tax 15%");
                     goldChange.Add(-taxAmount, taxText);
 
                     if (applyWithdrawals && clan.Kingdom != null)
@@ -82,11 +113,11 @@ namespace BannerlordPlusPlus
             int treasury = GetTreasury(kingdom);
 
             InformationManager.ShowInquiry(new InquiryData(
-                new TextObject("{=treasury_title}Krallık Hazinesi").ToString(),
-                new TextObject($"{kingdom.Name} Krallık Kasası: {treasury:N0} Dinar\n\n(Kervanlardan alınan %15 vergi bu cüzdana aktarılmaktadır.)").ToString(),
+                new TextObject("{=treasury_title}Kingdom Treasury").ToString(),
+                new TextObject($"{kingdom.Name} Treasury Balance: {treasury:N0} Denars\n\n(15% trade tax collected from market caravans is deposited directly into this vault.)").ToString(),
                 true,
                 false,
-                new TextObject("Tamam").ToString(),
+                new TextObject("Confirm").ToString(),
                 null,
                 null,
                 null

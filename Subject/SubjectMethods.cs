@@ -1,11 +1,12 @@
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.ComponentInterfaces;
+using TaleWorlds.CampaignSystem.Actions;
 
 namespace BannerlordPlusPlus
 {
     public class SubjectMethods
     {
-        public int GetTax(Kingdom subjectKingdom, float taxRate = 0.10f)
+        public static int GetTax(Kingdom subjectKingdom, float taxRate = 0.10f)
         {
             if(subjectKingdom == null) return 0;
 
@@ -17,13 +18,14 @@ namespace BannerlordPlusPlus
         }
 
 
-        public static void CallToWar(Kingdom Senior, Kingdom Junior, Kingdom k1)
+        public static void CallToWar(IFaction Senior, Kingdom Junior, IFaction sacrifice, DeclareWarAction.DeclareWarDetail detail)
         {
-            if(Senior == null && Junior == null && k1 == null) return;
+            if(Senior == null || Junior == null || sacrifice == null) return;
 
-            
+            if (Senior.IsAtWarWith(sacrifice) && !Junior.IsAtWarWith(sacrifice))
+            {
+                DeclareWarAction.ApplyByDefault(Junior, sacrifice);
+            }
         }
-
-
     }
 }

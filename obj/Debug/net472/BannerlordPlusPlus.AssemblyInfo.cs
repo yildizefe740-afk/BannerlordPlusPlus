@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BannerlordPlusPlus")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f52806770f0fd1f6bf623119676f493a89b7bcde")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7a479bd7b29180a8fb79692c7adfba4c278c097d")]
 [assembly: System.Reflection.AssemblyProductAttribute("BannerlordPlusPlus")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BannerlordPlusPlus")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -18,13 +18,18 @@ namespace BannerlordPlusPlus
         }
 
 
-        public static void CallToWar(IFaction Senior, Kingdom Junior, IFaction sacrifice, DeclareWarAction.DeclareWarDetail detail)
+        public static void CallToWar(IFaction senior, Kingdom junior, IFaction enemy)
         {
-            if(Senior == null || Junior == null || sacrifice == null) return;
+            if (senior == null || junior == null || enemy == null)
+                return;
 
-            if (Senior.IsAtWarWith(sacrifice) && !Junior.IsAtWarWith(sacrifice))
+            SubjectAttributes subject = SubjectBehavior.GetControlledSubject(junior);
+            if (subject == null || subject.SeniorKingdom != senior)
+                return;
+
+            if (senior.IsAtWarWith(enemy) && !junior.IsAtWarWith(enemy))
             {
-                DeclareWarAction.ApplyByDefault(Junior, sacrifice);
+                DeclareWarAction.ApplyByDefault(junior, enemy);
             }
         }
     }

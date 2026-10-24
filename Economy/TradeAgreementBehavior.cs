@@ -29,7 +29,12 @@ namespace BannerlordPlusPlus
         {
             if (_activeAgreements != null)
             {
-                _activeAgreements.RemoveAll(a => a == null || a.IsExpired);
+                _activeAgreements.RemoveAll(agreement =>
+                    agreement == null ||
+                    agreement.IsExpired ||
+                    !SubjectBehavior.CanCreateTradeAgreement(
+                        agreement.Kingdom1Id,
+                        agreement.Kingdom2Id));
             }
 
             ProcessAITradeAgreements();
@@ -47,6 +52,12 @@ namespace BannerlordPlusPlus
 
         public void AddAgreement(TradeAgreement agreement)
         {
+            if (agreement == null ||
+                !SubjectBehavior.CanCreateTradeAgreement(
+                    agreement.Kingdom1Id,
+                    agreement.Kingdom2Id))
+                return;
+
             if (_activeAgreements == null)
             {
                 _activeAgreements = new List<TradeAgreement>();
@@ -66,7 +77,10 @@ namespace BannerlordPlusPlus
             var k1 = kingdoms[i];
             var k2 = kingdoms[j];
 
-            if (k1.IsAtWarWith(k2) || HasTradeAgreement(k1, k2)) continue;
+            if (k1.IsAtWarWith(k2) ||
+                HasTradeAgreement(k1, k2) ||
+                !SubjectBehavior.CanCreateTradeAgreement(k1, k2))
+                continue;
 
             // Krallıkların lider klanları üzerinden ilişki puanı kontrolü
             Clan leaderClan1 = k1.RulingClan;

@@ -26,7 +26,10 @@ namespace BannerlordPlusPlus
         {
             if (_pacts != null)
             {
-                _pacts.RemoveAll(a => a == null || a.IsExpired);
+                _pacts.RemoveAll(pact =>
+                    pact == null ||
+                    pact.IsExpired ||
+                    !SubjectBehavior.CanCreateDiplomaticPact(pact.Kingdom1Id, pact.Kingdom2Id));
             }
 
             ProcessAIDefensivePacts();
@@ -87,6 +90,10 @@ namespace BannerlordPlusPlus
 
         public void AddPact(DefensivePact pact)
         {
+            if (pact == null ||
+                !SubjectBehavior.CanCreateDiplomaticPact(pact.Kingdom1Id, pact.Kingdom2Id))
+                return;
+
             if (_pacts == null)
             {
                 _pacts = new List<DefensivePact>();
@@ -106,7 +113,10 @@ namespace BannerlordPlusPlus
                     var k1 = kingdoms[i];
                     var k2 = kingdoms[j];
 
-                    if (k1.IsAtWarWith(k2) || HasDefensivePact(k1, k2)) continue;
+                    if (k1.IsAtWarWith(k2) ||
+                        HasDefensivePact(k1, k2) ||
+                        !SubjectBehavior.CanCreateDiplomaticPact(k1, k2))
+                        continue;
 
                     Clan rulingClan1 = k1.RulingClan;
                     Clan rulingClan2 = k2.RulingClan;

@@ -2,7 +2,7 @@
 <Module>
   <Id value="BannerlordPlusPlus"/>
   <Name value="BannerlordPlusPlus"/>
-  <Version value="v1.0.0"/>
+  <Version value="v1.1.0"/>
   <SingleplayerModule value="true"/>
   <MultiplayerModule value="false"/>
   <DependedModules>

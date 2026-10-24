@@ -11,7 +11,7 @@ namespace BannerlordPlusPlus
     {
         public override void RegisterEvents()
         {
-            // Bannerlord API'sinde doğru event dinleyici metodu: AddNonSerializedListener
+            // Register daily tick listener to handle daily dynamic treasury updates
             CampaignEvents.DailyTickEvent.AddNonSerializedListener(this, OnDailyTick);
         }
 
@@ -46,7 +46,19 @@ namespace BannerlordPlusPlus
 
         private Kingdom GetSeniorKingdom(Kingdom subjectKingdom)
         {
-            // TODO: Connect your diplomacy/subject relationship management logic here
+            if (subjectKingdom == null)
+                return null;
+
+            foreach (Kingdom possibleSenior in Kingdom.All)
+            {
+                if (possibleSenior == null || possibleSenior == subjectKingdom)
+                    continue;
+
+                SubjectAttributes subject = SubjectBehavior.GetSubjectBetween(possibleSenior, subjectKingdom);
+                if (subject != null && subject.JuniorKingdomId == subjectKingdom.StringId)
+                    return subject.SeniorKingdom;
+            }
+
             return null;
         }
 
@@ -60,13 +72,8 @@ namespace BannerlordPlusPlus
         public static void AddToTreasury(Kingdom kingdom, int amount)
         {
             if (kingdom == null) return;
+            // Allow negative values so kingdoms/clans can fall into debt like House Lannister
             kingdom.KingdomBudgetWallet += amount;
-            
-            // Prevent treasury from dropping below zero
-            if (kingdom.KingdomBudgetWallet < 0)
-            {
-                kingdom.KingdomBudgetWallet = 0;
-            }
         }
 
         // --- CARAVAN TAX PATCH ---
@@ -96,12 +103,14 @@ namespace BannerlordPlusPlus
             }
         }
 
-        // --- BLOCK DEFAULT BUDGET PATCH ---
-        [HarmonyPatch(typeof(DefaultClanFinanceModel), "CalculateClanIncome")]
+        // --- BLOCK ONLY DEFAULT KINGDOM BUDGET SUPPORT ---
+        // Specifically targets private method 'AddIncomeFromKingdomBudget' to disable free kingdom handouts
+        [HarmonyPatch(typeof(DefaultClanFinanceModel), "AddIncomeFromKingdomBudget")]
         public class BlockKingdomBudgetDistributionPatch
         {
             public static bool Prefix()
             {
+                // Disables automatic native kingdom budget handouts to clans
                 return false; 
             }
         }

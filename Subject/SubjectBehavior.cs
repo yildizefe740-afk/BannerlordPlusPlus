@@ -8,22 +8,10 @@ using TaleWorlds.Library;
 
 namespace BannerlordPlusPlus
 {
-    /// <summary>
-    /// Kurallar:
-    ///  - Tributary: sadece harac oder, diplomasisi ve savas/baris kararlari serbesttir.
-    ///  - Vassal / March: butun diplomasi kapali. Tek istisna: ayni overlord'un vassal/march'lari
-    ///    kendi aralarinda ticaret anlasmasi yapabilir.
-    ///  - Bagimsizlik savasi ozel bir savastir: sadece vassal/march, sadece overlord'a karsi,
-    ///    sadece LibertyDesire >= 100 iken (veya IsRebelling iken) acilabilir.
-    /// </summary>
     public class SubjectBehavior : CampaignBehaviorBase
     {
         private Dictionary<string, SubjectAttributes> _activeSubjects = new();
-
-        // Oyuncuya "isyan edebilirsin" mesajini her gun tekrarlamamak icin (kayda gerek yok)
         private static readonly HashSet<string> _revoltNotified = new();
-
-        // Bagimsizlik savasini kazanmak icin gereken guc orani (CustomPeaceBehavior ile ayni deger)
         private const float IndependenceStrengthRatio = 1.2f;
 
         public static SubjectBehavior Instance { get; private set; }
@@ -41,21 +29,45 @@ namespace BannerlordPlusPlus
 
         public void AddSubject(Kingdom senior, Kingdom junior, SubjectType type = SubjectType.Vassal)
         {
-            if (senior == null || junior == null || senior == junior) return;
+            if (senior == null || junior == null || senior == junior)
+            {
+                InformationManager.DisplayMessage(new InformationMessage("AddSubject Error: Senior or Junior is null, or they are the same kingdom.", Colors.Red));
+                return;
+            }
             if (_activeSubjects == null) _activeSubjects = new();
 
-            // (A,B) veya (B,A) zaten varsa tekrar ekleme
-            if (GetSubjectBetween(senior, junior) != null) return;
+            // Zaten aralarında bir ilişki var mı kontrolü
+            if (GetSubjectBetween(senior, junior) != null)
+            {
+                InformationManager.DisplayMessage(new InformationMessage($"AddSubject Warning: A subject relation already exists between {senior.Name} and {junior.Name}.", Colors.Yellow));
+                return;
+            }
 
             if (IsRestrictedSubjectType(type))
             {
-                if (GetControlledSubject(junior) != null) return; // zaten baska birinin vassal/march'i
-                if (GetControlledSubject(senior) != null) return; // vassal overlord olamaz
-                if (HasRestrictedSubjects(junior)) return;        // overlord vassal olamaz
+                if (GetControlledSubject(junior) != null)
+                {
+                    InformationManager.DisplayMessage(new InformationMessage($"AddSubject Error: {junior.Name} is already a subject of another kingdom.", Colors.Red));
+                    return;
+                }
+                if (GetControlledSubject(senior) != null)
+                {
+                    InformationManager.DisplayMessage(new InformationMessage($"AddSubject Error: {senior.Name} is already a subject and cannot be an overlord.", Colors.Red));
+                    return;
+                }
+                if (HasRestrictedSubjects(junior))
+                {
+                    InformationManager.DisplayMessage(new InformationMessage($"AddSubject Error: {junior.Name} already has vassals/subjects and cannot become a subject.", Colors.Red));
+                    return;
+                }
             }
 
             string key = GetSubjectKey(senior, junior);
-            if (_activeSubjects.ContainsKey(key)) return;
+            if (_activeSubjects.ContainsKey(key))
+            {
+                InformationManager.DisplayMessage(new InformationMessage($"AddSubject Warning: Dictionary already contains key {key}.", Colors.Yellow));
+                return;
+            }
 
             SubjectAttributes subject = new SubjectAttributes
             {
@@ -99,12 +111,16 @@ namespace BannerlordPlusPlus
             foreach (var pair in _activeSubjects.ToList())
             {
                 SubjectAttributes subject = pair.Value;
-                Kingdom senior = subject?.SeniorKingdom;
-                Kingdom junior = subject?.JuniorKingdom;
+                if (subject == null)
+                {
+                    _activeSubjects.Remove(pair.Key);
+                    continue;
+                }
 
-                // Yetim kayit (krallik yok olmus / bulunamiyor): temizle
-                if (subject == null || senior == null || junior == null ||
-                    senior.IsEliminated || junior.IsEliminated)
+                Kingdom senior = FindKingdom(subject.SeniorKingdomId);
+                Kingdom junior = FindKingdom(subject.JuniorKingdomId);
+
+                if (senior == null || junior == null || senior.IsEliminated || junior.IsEliminated)
                 {
                     _activeSubjects.Remove(pair.Key);
                     _revoltNotified.Remove(pair.Key);
@@ -112,8 +128,8 @@ namespace BannerlordPlusPlus
                     continue;
                 }
 
-                UpdateLibertyDesire(subject);
-                TriggerIndependenceWar(subject);
+                UpdateLibertyDesire(subject, senior, junior);
+                TriggerIndependenceWar(subject, senior, junior);
             }
         }
 
@@ -136,7 +152,6 @@ namespace BannerlordPlusPlus
         {
             if (destroyedKingdom == null || _activeSubjects == null) return;
 
-            // Kingdom nesnesi artik cozulemeyebilir; bu yuzden ID uzerinden dogrudan anahtarla sil
             List<string> keysToRemove = _activeSubjects
                 .Where(p => p.Value != null &&
                             (p.Value.SeniorKingdomId == destroyedKingdom.StringId ||
@@ -154,14 +169,9 @@ namespace BannerlordPlusPlus
                 KingdomsUI.Invalidate();
         }
 
-        public void UpdateLibertyDesire(SubjectAttributes subject)
+        public void UpdateLibertyDesire(SubjectAttributes subject, Kingdom senior, Kingdom junior)
         {
-            if (subject == null) return;
-
-            Kingdom senior = subject.SeniorKingdom;
-            Kingdom junior = subject.JuniorKingdom;
-
-            if (senior == null || junior == null) return;
+            if (subject == null || senior == null || junior == null) return;
 
             int juniorSettlements = junior.Settlements.Count;
             int seniorSettlements = senior.Settlements.Count;
@@ -185,21 +195,10 @@ namespace BannerlordPlusPlus
                 _revoltNotified.Remove(GetSubjectKey(senior, junior));
         }
 
-        /// <summary>
-        /// Bagimsizlik savasi sadece vassal ve march icin gecerli. Tributary zaten ozgur oldugu icin isyan etmez.
-        /// AI: LibertyDesire 100 iken gunluk %15 sansla savas acar.
-        /// Oyuncu: savasi kendisi acar (diplomasi ekranindan overlord'a savas ilani); yama buna izin verir.
-        /// </summary>
-        public void TriggerIndependenceWar(SubjectAttributes subject)
+        public void TriggerIndependenceWar(SubjectAttributes subject, Kingdom senior, Kingdom junior)
         {
-            if (subject == null) return;
-            if (!IsRestrictedSubjectType(subject.Type)) return;
+            if (subject == null || !IsRestrictedSubjectType(subject.Type)) return;
             if (subject.IsRebelling) return;
-
-            Kingdom senior = subject.SeniorKingdom;
-            Kingdom junior = subject.JuniorKingdom;
-
-            if (senior == null || junior == null) return;
             if (senior.IsEliminated || junior.IsEliminated) return;
             if (junior.IsAtWarWith(senior)) return;
             if (subject.LibertyDesire < 100f) return;
@@ -221,12 +220,11 @@ namespace BannerlordPlusPlus
 
             if (MBRandom.RandomFloat >= 0.15f) return;
 
-            subject.IsRebelling = true; // yama bu bayrakla savasa izin verir
+            subject.IsRebelling = true;
             DeclareWarAction.ApplyByDefault(junior, senior);
 
             if (!junior.IsAtWarWith(senior))
             {
-                // Savas baska bir kural yuzunden acilmadiysa bayrak takili kalmasin
                 subject.IsRebelling = false;
                 return;
             }
@@ -236,16 +234,9 @@ namespace BannerlordPlusPlus
             ));
         }
 
-        /// <summary>
-        /// Barisla biten bagimsizlik savasini sonuclandirir (vanilla AI baris yaptiginda).
-        /// Oyuncu baris teklifi CustomPeaceBehavior uzerinden gider ve bayragi zaten sifirlar.
-        /// </summary>
-        private void ResolveIndependenceWar(SubjectAttributes subject)
+        private void ResolveIndependenceWar(SubjectAttributes subject, Kingdom senior, Kingdom junior)
         {
             if (subject == null || !subject.IsRebelling) return;
-
-            Kingdom senior = subject.SeniorKingdom;
-            Kingdom junior = subject.JuniorKingdom;
 
             subject.IsRebelling = false;
             subject.LibertyDesire = 0f;
@@ -265,10 +256,6 @@ namespace BannerlordPlusPlus
             }
         }
 
-        // ---------------------------------------------------------------------
-        // Sorgu yardimcilari
-        // ---------------------------------------------------------------------
-
         public static SubjectAttributes GetSubjectBetween(Kingdom k1, Kingdom k2)
         {
             if (Instance == null || Instance._activeSubjects == null || k1 == null || k2 == null) return null;
@@ -282,7 +269,6 @@ namespace BannerlordPlusPlus
             return null;
         }
 
-        /// <summary>Krallik bir vassal/march ise, onu kontrol eden kaydi dondurur. Tributary icin null.</summary>
         public static SubjectAttributes GetControlledSubject(Kingdom junior)
         {
             if (Instance == null || Instance._activeSubjects == null || junior == null)
@@ -310,7 +296,6 @@ namespace BannerlordPlusPlus
                 IsRestrictedSubjectType(subject.Type));
         }
 
-        /// <summary>Iki krallik da vassal/march ve ayni overlord'a bagli mi?</summary>
         private static bool SharesSenior(Kingdom a, Kingdom b)
         {
             SubjectAttributes sa = GetControlledSubject(a);
@@ -318,12 +303,6 @@ namespace BannerlordPlusPlus
             return sa != null && sb != null && sa.SeniorKingdomId == sb.SeniorKingdomId;
         }
 
-        // ---------------------------------------------------------------------
-        // Diplomasi kapilari. Bu fonksiyonlar HER diplomatik yolda cagrilmali:
-        // savunma pakti, NAP, ittifak, evlilik, (varsa) hediye/teklif menuleri ve AI uretimleri.
-        // ---------------------------------------------------------------------
-
-        /// <summary>Savunma pakti, NAP, ittifak, evlilik vb. Vassal/March olan taraf varsa false.</summary>
         public static bool CanCreateDiplomaticPact(Kingdom kingdom1, Kingdom kingdom2)
         {
             return kingdom1 != null &&
@@ -332,10 +311,6 @@ namespace BannerlordPlusPlus
                    GetControlledSubject(kingdom2) == null;
         }
 
-        /// <summary>
-        /// Ticaret anlasmasi: iki taraf da ozgurse serbest. Vassal/March ise sadece
-        /// ayni overlord'un vassal/march'i ile yapabilir. Diger her durumda false.
-        /// </summary>
         public static bool CanCreateTradeAgreement(Kingdom kingdom1, Kingdom kingdom2)
         {
             if (kingdom1 == null || kingdom2 == null)
@@ -369,10 +344,6 @@ namespace BannerlordPlusPlus
                 : Kingdom.All.FirstOrDefault(kingdom => kingdom != null && kingdom.StringId == kingdomId);
         }
 
-        // ---------------------------------------------------------------------
-        // Olaylar
-        // ---------------------------------------------------------------------
-
         private void OnWarDeclared(
             IFaction faction1,
             IFaction faction2,
@@ -386,19 +357,17 @@ namespace BannerlordPlusPlus
                 if (subject == null || !IsRestrictedSubjectType(subject.Type))
                     continue;
 
-                Kingdom senior = subject.SeniorKingdom;
-                Kingdom junior = subject.JuniorKingdom;
+                Kingdom senior = FindKingdom(subject.SeniorKingdomId);
+                Kingdom junior = FindKingdom(subject.JuniorKingdomId);
                 if (senior == null || junior == null)
                     continue;
 
-                // Bagimsizlik savasi basladi (oyuncu ya da AI, overlord'a savas actigi an)
                 if (faction1 == junior && faction2 == senior)
                 {
                     subject.IsRebelling = true;
                     continue;
                 }
 
-                // Isyan eden alt krallik overlord'un savaslarina katilmaz, overlord da onun savaslarina
                 if (subject.IsRebelling)
                     continue;
 
@@ -430,19 +399,18 @@ namespace BannerlordPlusPlus
                 if (subject == null || !IsRestrictedSubjectType(subject.Type))
                     continue;
 
-                Kingdom senior = subject.SeniorKingdom;
-                Kingdom junior = subject.JuniorKingdom;
+                Kingdom senior = FindKingdom(subject.SeniorKingdomId);
+                Kingdom junior = FindKingdom(subject.JuniorKingdomId);
                 if (senior == null || junior == null)
                     continue;
 
-                // Bagimsizlik savasi baris ile bitti
                 bool isIndependencePair =
                     (faction1 == junior && faction2 == senior) ||
                     (faction1 == senior && faction2 == junior);
 
                 if (isIndependencePair)
                 {
-                    ResolveIndependenceWar(subject);
+                    ResolveIndependenceWar(subject, senior, junior);
                     continue;
                 }
 
@@ -460,8 +428,8 @@ namespace BannerlordPlusPlus
             if (subject == null || !IsRestrictedSubjectType(subject.Type))
                 return;
 
-            Kingdom senior = subject.SeniorKingdom;
-            Kingdom junior = subject.JuniorKingdom;
+            Kingdom senior = FindKingdom(subject.SeniorKingdomId);
+            Kingdom junior = FindKingdom(subject.JuniorKingdomId);
             if (senior == null || junior == null)
                 return;
 
@@ -471,10 +439,6 @@ namespace BannerlordPlusPlus
                     SubjectMethods.CallToWar(senior, junior, enemy);
             }
         }
-
-        // ---------------------------------------------------------------------
-        // Harmony yamalari
-        // ---------------------------------------------------------------------
 
         [HarmonyPatch(typeof(DeclareWarAction), "ApplyInternal")]
         public static class PreventIndependentSubjectWarsPatch
@@ -486,27 +450,22 @@ namespace BannerlordPlusPlus
 
                 Kingdom defender = faction2 as Kingdom;
 
-                // Saldiran bir vassal/march ise
                 SubjectAttributes subject = GetControlledSubject(aggressor);
                 if (subject != null)
                 {
-                    Kingdom senior = subject.SeniorKingdom;
+                    Kingdom senior = FindKingdom(subject.SeniorKingdomId);
                     if (senior == null)
-                        return true; // yetim kayit, engelleme
+                        return true;
 
-                    // Bagimsizlik savasi: sadece overlord'a karsi, sadece LibertyDesire 100 iken veya isyan basladiysa
                     if (faction2 == senior)
                         return subject.IsRebelling || subject.LibertyDesire >= 100f;
 
-                    // Ayni overlord'un diger vassal/march'ina savas acamaz
                     if (defender != null && SharesSenior(aggressor, defender))
                         return false;
 
-                    // Gerisi: sadece overlord zaten savastaysa o dusmana katilabilir
                     return faction2 != null && senior.IsAtWarWith(faction2);
                 }
 
-                // Overlord kendi vassal/march'ina savas acamaz
                 if (defender != null)
                 {
                     SubjectAttributes defenderSubject = GetControlledSubject(defender);
@@ -535,8 +494,7 @@ namespace BannerlordPlusPlus
                 if (subject == null)
                     return true;
 
-                // Isyan eden kendi savasini yonetir; overlord ile baris (bagimsizlik savasi sonu) her zaman serbest
-                Kingdom senior = subject.SeniorKingdom;
+                Kingdom senior = FindKingdom(subject.SeniorKingdomId);
                 if (senior == null || subject.IsRebelling || opponent == senior)
                     return true;
 

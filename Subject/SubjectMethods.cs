@@ -1,22 +1,21 @@
+using System;
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.CampaignSystem.ComponentInterfaces;
 using TaleWorlds.CampaignSystem.Actions;
 
 namespace BannerlordPlusPlus
 {
     public class SubjectMethods
     {
-        public static int GetTax(Kingdom subjectKingdom, float taxRate = 0.10f)
+        public static int GetTax(Kingdom subjectKingdom, SubjectType subjectType, float taxRate = 0.10f)
         {
-            if(subjectKingdom == null) return 0;
+            if (subjectKingdom == null ||
+                (subjectType != SubjectType.Tributary && subjectType != SubjectType.Vassal) ||
+                taxRate <= 0f)
+                return 0;
 
             int baseKingdomTax = KingdomExtensions.TaxAmount(subjectKingdom);
-
-            int subjectTaxAmount = (int)(baseKingdomTax * taxRate);
-
-            return subjectTaxAmount;
+            return Math.Max(0, (int)(baseKingdomTax * taxRate));
         }
-
 
         public static void CallToWar(IFaction senior, Kingdom junior, IFaction enemy)
         {

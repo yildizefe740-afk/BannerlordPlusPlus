@@ -23,6 +23,7 @@ namespace BannerlordPlusPlus
             if (gameStarterObject is CampaignGameStarter starter)
             {
                 // Add all behaviors to the game.
+                starter.AddBehavior(new AllianceBehavior());
                 starter.AddBehavior(new SubjectBehavior());
                 starter.AddBehavior(new TradeAgreementBehavior());
                 starter.AddBehavior(new DefensivePactBehavior());

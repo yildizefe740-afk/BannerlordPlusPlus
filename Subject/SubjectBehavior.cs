@@ -34,6 +34,13 @@ namespace BannerlordPlusPlus
                 InformationManager.DisplayMessage(new InformationMessage("AddSubject Error: Senior or Junior is null, or they are the same kingdom.", Colors.Red));
                 return;
             }
+
+            if (type == SubjectType.None || !System.Enum.IsDefined(typeof(SubjectType), type))
+            {
+                InformationManager.DisplayMessage(new InformationMessage("AddSubject Error: The subject type is invalid.", Colors.Red));
+                return;
+            }
+
             if (_activeSubjects == null) _activeSubjects = new();
 
             // Check whether a relationship already exists between them.
@@ -128,8 +135,11 @@ namespace BannerlordPlusPlus
                     continue;
                 }
 
-                UpdateLibertyDesire(subject, senior, junior);
-                TriggerIndependenceWar(subject, senior, junior);
+                if (IsRestrictedSubjectType(subject.Type))
+                {
+                    UpdateLibertyDesire(subject, senior, junior);
+                    TriggerIndependenceWar(subject, senior, junior);
+                }
             }
         }
 
@@ -305,15 +315,17 @@ namespace BannerlordPlusPlus
 
         public static bool CanCreateDiplomaticPact(Kingdom kingdom1, Kingdom kingdom2)
         {
-            return kingdom1 != null &&
-                   kingdom2 != null &&
-                   GetControlledSubject(kingdom1) == null &&
-                   GetControlledSubject(kingdom2) == null;
+            return CanDiplomaticallyInteract(kingdom1, kingdom2);
         }
 
         public static bool CanCreateTradeAgreement(Kingdom kingdom1, Kingdom kingdom2)
         {
-            if (kingdom1 == null || kingdom2 == null)
+            return CanDiplomaticallyInteract(kingdom1, kingdom2);
+        }
+
+        private static bool CanDiplomaticallyInteract(Kingdom kingdom1, Kingdom kingdom2)
+        {
+            if (kingdom1 == null || kingdom2 == null || kingdom1 == kingdom2)
                 return false;
 
             SubjectAttributes subject1 = GetControlledSubject(kingdom1);

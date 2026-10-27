@@ -24,7 +24,8 @@ namespace BannerlordPlusPlus
 
         public override void RegisterEvents()
         {
-            CampaignEvents.WarDeclared.AddNonSerializedListener(this, OnWarDeclared);
+            CampaignEvents.WarDeclared.AddNonSerializedListener(this, OnDefensiveWarDeclared);
+            CampaignEvents.WarDeclared.AddNonSerializedListener(this, OnOffensiveWarDeclared);
             CampaignEvents.KingdomDestroyedEvent.AddNonSerializedListener(this, OnKingdomDestroyed);
         }
 
@@ -107,7 +108,7 @@ namespace BannerlordPlusPlus
         public bool IsRejected(Kingdom ally, Kingdom defender, Kingdom aggressor, float rng)
         {
             Alliance alliance = GetAllianceBetween(ally, defender);
-            if (alliance == null) return true;
+            if (alliance == null || ally == null || defender == null || aggressor == null) return true;
 
             // Low trust evaluation: High chance to betray/refuse
             if (alliance.Trust < HighTrustThreshold)
@@ -126,7 +127,7 @@ namespace BannerlordPlusPlus
         // Defensive Call Logic
         // ---------------------------------------------------------------------
 
-        private void OnWarDeclared(IFaction faction1, IFaction faction2, DeclareWarAction.DeclareWarDetail detail)
+        private void OnDefensiveWarDeclared(IFaction faction1, IFaction faction2, DeclareWarAction.DeclareWarDetail detail)
         {
             if (_alliances == null || _alliances.Count == 0) return;
             if (!(faction1 is Kingdom attacker) || !(faction2 is Kingdom defender)) return;
@@ -145,27 +146,133 @@ namespace BannerlordPlusPlus
                 if (ally == null || ally.IsEliminated) continue;
                 if (ally == attacker) continue;              // Do not call an ally if they are the attacker
                 if (ally.IsAtWarWith(attacker)) continue;    // Already at war, skip calling
-
-                // TODO: Display UI confirmation prompt if ally is player's kingdom
-                if (ally == playerKingdom) continue;
+                if (HasTruceBetween(ally, attacker) || HasTruceBetween(attacker, defender))
+                    continue;
 
                 CallToDefensiveWar(alliance, ally, defender, attacker);
             }
         }
 
+        private void OnOffensiveWarDeclared(IFaction faction1, IFaction faction2, DeclareWarAction.DeclareWarDetail detail)
+        {
+            if (_alliances == null || _alliances.Count == 0) return;
+            if (!(faction1 is Kingdom attacker) || !(faction2 is Kingdom defender)) return;
+
+            Kingdom playerKingdom = Clan.PlayerClan?.Kingdom;
+            if (attacker == playerKingdom)
+                return;
+
+            foreach (Alliance alliance in _alliances.ToList())
+            {
+                if (!Involves(alliance, attacker))
+                    continue;
+
+                string allyId = alliance.kingdom1ID == attacker.StringId ? alliance.kingdom2ID : alliance.kingdom1ID;
+                Kingdom ally = FindKingdom(allyId);
+
+                if (ally == null || ally.IsEliminated)
+                    continue;
+                if (ally.IsAtWarWith(defender))
+                    continue;
+                if (HasTruceBetween(ally, defender) || HasTruceBetween(attacker, defender))
+                    continue;
+
+                CallToOffensiveWar(alliance, ally, attacker, defender);
+            }
+        }
+
         private void CallToDefensiveWar(Alliance alliance, Kingdom ally, Kingdom defender, Kingdom attacker)
         {
+            if (alliance == null || ally == null || defender == null || attacker == null)
+                return;
+
+            Kingdom playerKingdom = Clan.PlayerClan?.Kingdom;
+            if (ally == playerKingdom)
+            {
+                PupUpsUI.ShowCallToWarPopup(
+                    defender,
+                    attacker,
+                    true,
+                    () =>
+                    {
+                        if (!HasTruceBetween(ally, attacker) &&
+                            !HasTruceBetween(attacker, defender) &&
+                            !ally.IsAtWarWith(attacker))
+                            DeclareWarAction.ApplyByDefault(ally, attacker);
+                    },
+                    () => RejectDefensiveWarCall(alliance, ally, defender));
+                return;
+            }
+
             float rng = MBRandom.RandomFloat;
 
             if (IsRejected(ally, defender, attacker, rng))
             {
-                alliance.Trust /= 3f;
-                // TODO: Dissolve alliance + apply truce / feud penalty if Trust falls below critical threshold
+                RejectDefensiveWarCall(alliance, ally, defender);
                 return;
             }
 
-            // TODO: Check CustomPeaceBehavior.HasActiveTruce(ally, attacker) before applying war to prevent unintended truce breaks
             DeclareWarAction.ApplyByDefault(ally, attacker);
+        }
+
+        private void RejectDefensiveWarCall(Alliance alliance, Kingdom ally, Kingdom defender)
+        {
+            if (alliance == null || ally == null || defender == null)
+                return;
+
+            _alliances?.Remove(alliance);
+            alliance.Trust /= 3f;
+
+            var peaceBehavior = Campaign.Current?.GetCampaignBehavior<CustomPeaceBehavior>();
+            peaceBehavior?.AddTruce(ally, defender, 60.0);
+        }
+
+        private void CallToOffensiveWar(Alliance alliance, Kingdom ally, Kingdom offensiveAlly, Kingdom target)
+        {
+            if (alliance == null || ally == null || offensiveAlly == null || target == null)
+                return;
+
+            if (HasTruceBetween(ally, target) || HasTruceBetween(offensiveAlly, target))
+                return;
+
+            Kingdom playerKingdom = Clan.PlayerClan?.Kingdom;
+            if (ally == playerKingdom)
+            {
+                PupUpsUI.ShowCallToWarPopup(
+                    offensiveAlly,
+                    target,
+                    false,
+                    () =>
+                    {
+                        if (!HasTruceBetween(ally, target) && !ally.IsAtWarWith(target))
+                            DeclareWarAction.ApplyByDefault(ally, target);
+                    },
+                    () => RejectOffensiveWarCall(alliance));
+                return;
+            }
+
+            float rng = MBRandom.RandomFloat;
+            if (IsRejected(ally, offensiveAlly, target, rng))
+            {
+                RejectOffensiveWarCall(alliance);
+                return;
+            }
+
+            if (!ally.IsAtWarWith(target))
+                DeclareWarAction.ApplyByDefault(ally, target);
+        }
+
+        private static void RejectOffensiveWarCall(Alliance alliance)
+        {
+            if (alliance == null)
+                return;
+
+            alliance.Trust = System.Math.Max(0f, alliance.Trust - 10f);
+        }
+
+        private static bool HasTruceBetween(Kingdom kingdom1, Kingdom kingdom2)
+        {
+            return CustomPeaceBehavior.Instance?.HasActiveTruce(kingdom1, kingdom2) == true;
         }
     }
 }

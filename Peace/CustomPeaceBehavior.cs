@@ -37,7 +37,21 @@ namespace BannerlordPlusPlus
 
         public bool HasActiveTruce(Kingdom k1, Kingdom k2)
         {
-            return _activeTruces.Any(a => a.Involves(k1, k2) && !a.IsExpired);
+            return k1 != null &&
+                   k2 != null &&
+                   _activeTruces != null &&
+                   _activeTruces.Any(a => a != null && a.Involves(k1, k2) && !a.IsExpired);
+        }
+
+        public bool AddTruce(Kingdom k1, Kingdom k2, double durationDays)
+        {
+            if (k1 == null || k2 == null || k1 == k2 || durationDays <= 0)
+                return false;
+
+            _activeTruces ??= new List<PeaceAgreement>();
+            _activeTruces.RemoveAll(a => a == null || a.Involves(k1, k2));
+            _activeTruces.Add(new PeaceAgreement(k1, k2, durationDays));
+            return true;
         }
 
         public void ProcessGlobalPeaceRequest(Kingdom k1, Kingdom k2, int requestedTribute, PeaceDealOptions options = PeaceDealOptions.None)
@@ -59,8 +73,7 @@ namespace BannerlordPlusPlus
             MakePeaceAction.Apply(k1, k2);
 
             double truceDuration = options.HasFlag(PeaceDealOptions.Truce) ? 200.0 : 100.0;
-            _activeTruces.RemoveAll(a => a.Involves(k1, k2));
-            _activeTruces.Add(new PeaceAgreement(k1, k2, truceDuration));
+            AddTruce(k1, k2, truceDuration);
 
             if (options.HasFlag(PeaceDealOptions.PlunderTreasury))
             {
@@ -117,8 +130,7 @@ namespace BannerlordPlusPlus
                 MakePeaceAction.Apply(senior, junior);
             }
 
-            _activeTruces.RemoveAll(a => a.Involves(senior, junior));
-            _activeTruces.Add(new PeaceAgreement(senior, junior, 150.0));
+            AddTruce(senior, junior, 150.0);
 
             IsExecutingCustomPeace = false;
         }

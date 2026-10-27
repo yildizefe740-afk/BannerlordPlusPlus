@@ -58,7 +58,11 @@ namespace BannerlordPlusPlus
             if (playerKingdom == null) return;
 
             var allianceBehavior = Campaign.Current.GetCampaignBehavior<AllianceBehavior>();
-            var targetKingdoms = Kingdom.All.Where(k => k != playerKingdom && !k.IsEliminated && !k.IsAtWarWith(playerKingdom)).ToList();
+            var targetKingdoms = Kingdom.All.Where(k =>
+                k != playerKingdom &&
+                !k.IsEliminated &&
+                !k.IsAtWarWith(playerKingdom) &&
+                SubjectBehavior.CanCreateDiplomaticPact(playerKingdom, k)).ToList();
 
             if (!targetKingdoms.Any())
             {
@@ -110,7 +114,11 @@ namespace BannerlordPlusPlus
             if (playerKingdom == null) return;
 
             var tradeBehavior = Campaign.Current.GetCampaignBehavior<TradeAgreementBehavior>();
-            var targetKingdoms = Kingdom.All.Where(k => k != playerKingdom && !k.IsEliminated && !k.IsAtWarWith(playerKingdom)).ToList();
+            var targetKingdoms = Kingdom.All.Where(k =>
+                k != playerKingdom &&
+                !k.IsEliminated &&
+                !k.IsAtWarWith(playerKingdom) &&
+                SubjectBehavior.CanCreateTradeAgreement(playerKingdom, k)).ToList();
 
             if (!targetKingdoms.Any())
             {
@@ -148,7 +156,11 @@ namespace BannerlordPlusPlus
             if (playerKingdom == null) return;
 
             var pactBehavior = Campaign.Current.GetCampaignBehavior<DefensivePactBehavior>();
-            var targetKingdoms = Kingdom.All.Where(k => k != playerKingdom && !k.IsEliminated && !k.IsAtWarWith(playerKingdom)).ToList();
+            var targetKingdoms = Kingdom.All.Where(k =>
+                k != playerKingdom &&
+                !k.IsEliminated &&
+                !k.IsAtWarWith(playerKingdom) &&
+                SubjectBehavior.CanCreateDiplomaticPact(playerKingdom, k)).ToList();
 
             if (!targetKingdoms.Any())
             {
@@ -186,7 +198,11 @@ namespace BannerlordPlusPlus
             if (playerKingdom == null) return;
 
             var pactBehavior = Campaign.Current.GetCampaignBehavior<NonAggressionPactBehavior>();
-            var targetKingdoms = Kingdom.All.Where(k => k != playerKingdom && !k.IsEliminated && !k.IsAtWarWith(playerKingdom)).ToList();
+            var targetKingdoms = Kingdom.All.Where(k =>
+                k != playerKingdom &&
+                !k.IsEliminated &&
+                !k.IsAtWarWith(playerKingdom) &&
+                SubjectBehavior.CanCreateDiplomaticPact(playerKingdom, k)).ToList();
 
             if (!targetKingdoms.Any())
             {
@@ -240,8 +256,14 @@ namespace BannerlordPlusPlus
                         break;
 
                     case DiplomacyEvaluator.ProposalType.NonAggressionPact:
-                        NonAggressionPactBehavior.AddPact(playerKingdom, selectedKingdom, 60.0);
-                        ShowResultPopup("Proposal Accepted", $"{selectedKingdom.Name} signed the non-aggression pact!");
+                        if (NonAggressionPactBehavior.AddPact(playerKingdom, selectedKingdom, 60.0))
+                        {
+                            ShowResultPopup("Proposal Accepted", $"{selectedKingdom.Name} signed the non-aggression pact!");
+                        }
+                        else
+                        {
+                            ShowResultPopup("Pact Not Established", $"The non-aggression pact with {selectedKingdom.Name} could not be established.");
+                        }
                         break;
                 }
             }

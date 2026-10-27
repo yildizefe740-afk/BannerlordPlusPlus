@@ -27,12 +27,12 @@ namespace BannerlordPlusPlus
             {
                 if (kingdom == null || kingdom.IsEliminated) continue;
 
-                // Obtain the senior/suzerain kingdom if this kingdom is a subject
-                Kingdom seniorKingdom = GetSeniorKingdom(kingdom);
+                SubjectAttributes subject = GetSubjectForJunior(kingdom);
+                Kingdom seniorKingdom = subject?.SeniorKingdom;
 
                 if (seniorKingdom != null && !seniorKingdom.IsEliminated)
                 {
-                    int taxAmount = SubjectMethods.GetTax(kingdom, 0.10f);
+                    int taxAmount = SubjectMethods.GetTax(kingdom, subject.Type, 0.10f);
 
                     if (taxAmount > 0)
                     {
@@ -44,7 +44,7 @@ namespace BannerlordPlusPlus
             }
         }
 
-        private Kingdom GetSeniorKingdom(Kingdom subjectKingdom)
+        private SubjectAttributes GetSubjectForJunior(Kingdom subjectKingdom)
         {
             if (subjectKingdom == null)
                 return null;
@@ -56,7 +56,7 @@ namespace BannerlordPlusPlus
 
                 SubjectAttributes subject = SubjectBehavior.GetSubjectBetween(possibleSenior, subjectKingdom);
                 if (subject != null && subject.JuniorKingdomId == subjectKingdom.StringId)
-                    return subject.SeniorKingdom;
+                    return subject;
             }
 
             return null;

@@ -34,19 +34,22 @@ namespace BannerlordPlusPlus
             ProcessAINAP();
         }
 
-        public static void AddPact(Kingdom k1, Kingdom k2, double durationDays)
+        public static bool AddPact(Kingdom k1, Kingdom k2, double durationDays)
         {
             if (!SubjectBehavior.CanCreateDiplomaticPact(k1, k2))
-                return;
+                return false;
 
             if (_NApact == null)
                 _NApact = new List<NonAggressionPact>();
 
-            if (!_NApact.Any(p => (p.Kingdom1Id == k1.StringId && p.Kingdom2Id == k2.StringId) ||
-                                  (p.Kingdom1Id == k2.StringId && p.Kingdom2Id == k1.StringId)))
-            {
-                _NApact.Add(new NonAggressionPact(k1, k2, durationDays));
-            }
+            if (_NApact.Any(p => p != null && !p.IsExpired &&
+                                 ((p.Kingdom1Id == k1.StringId && p.Kingdom2Id == k2.StringId) ||
+                                  (p.Kingdom1Id == k2.StringId && p.Kingdom2Id == k1.StringId))))
+                return false;
+
+            _NApact.RemoveAll(p => p == null || p.IsExpired);
+            _NApact.Add(new NonAggressionPact(k1, k2, durationDays));
+            return true;
         }
 
         public bool HasNonAggressionPact(Kingdom k1, Kingdom k2)
@@ -71,8 +74,8 @@ namespace BannerlordPlusPlus
                 if (_NApact == null)
                     return true;
 
-                bool hasActivePact = _NApact.Any(p => 
-                    !p.IsExpired && 
+                bool hasActivePact = _NApact.Any(p =>
+                    p != null && !p.IsExpired &&
                     ((p.Kingdom1Id == faction1.StringId && p.Kingdom2Id == faction2.StringId) ||
                      (p.Kingdom1Id == faction2.StringId && p.Kingdom2Id == faction1.StringId))
                 );

@@ -13,16 +13,16 @@ namespace BannerlordPlusPlus
         private static readonly uint SettlementLightBlue =
             new Color(0.58f, 0.78f, 1f, 1f).ToUnsignedInteger();
 
-        // Iliski durumunun bir anlik goruntusu. Getter'lar sadece bunu okur, tarama yapmaz.
+        // Snapshot of relation state. Getters read this without performing a scan.
         private class Snapshot
         {
             public Kingdom Player;
             public int Day = -1;
-            // Mavi gorunecekler: muttefik + vassal + march
+            // Display in blue: allies, vassals, and marches.
             public readonly HashSet<Kingdom> Highlighted = new HashSet<Kingdom>();
-            // Oyuncunun bayrak renklerini alacaklar: sadece vassal + march
+            // Use the player's banner colors: vassals and marches only.
             public readonly HashSet<Kingdom> FollowBanner = new HashSet<Kingdom>();
-            // Olusturulmus bayraklar (her cagrida yeni Banner uretmemek icin)
+            // Created banners, to avoid generating a new Banner on every call.
             public readonly ConcurrentDictionary<Kingdom, Banner> Banners =
                 new ConcurrentDictionary<Kingdom, Banner>();
         }
@@ -35,8 +35,8 @@ namespace BannerlordPlusPlus
         [System.ThreadStatic] private static bool _building;
 
         /// <summary>
-        /// Subject/ittifak degisince cagir (AddSubject, EndSubject, OnKingdomDestroyed, ittifak kur/boz).
-        /// Cagirmazsan da en gec ertesi gun veya oyuncu krallik degistirince kendini yeniler.
+        /// Call when subjects or alliances change (AddSubject, EndSubject, OnKingdomDestroyed, alliance formed/broken).
+        /// If not called, refreshes by the next day at the latest or when the player changes kingdoms.
         /// </summary>
         public static void Invalidate()
         {
@@ -55,7 +55,7 @@ namespace BannerlordPlusPlus
             if (!_dirty && s.Player == playerKingdom && s.Day == day)
                 return s;
 
-            // Build sirasinda tekrar girersek eski goruntuyu kullan (sonsuz dongu olmasin)
+            // If re-entered during a build, use the previous snapshot to avoid an infinite loop.
             if (_building)
                 return s;
 
@@ -70,7 +70,7 @@ namespace BannerlordPlusPlus
                 {
                     _dirty = false;
                     s = Build(playerKingdom, day);
-                    _snap = s; // referans degisimi atomik, okuyanlar eskisini ya da yenisini gorur
+                    _snap = s; // Reference replacement is atomic; readers see either the old or new snapshot.
                 }
                 finally
                 {

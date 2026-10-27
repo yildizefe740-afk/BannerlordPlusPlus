@@ -82,7 +82,7 @@ namespace BannerlordPlusPlus
                 !SubjectBehavior.CanCreateTradeAgreement(k1, k2))
                 continue;
 
-            // Krallıkların lider klanları üzerinden ilişki puanı kontrolü
+            // Check relation scores through the kingdoms' ruling clans.
             Clan leaderClan1 = k1.RulingClan;
             Clan leaderClan2 = k2.RulingClan;
 
@@ -90,10 +90,10 @@ namespace BannerlordPlusPlus
             {
                 float relation = leaderClan1.GetRelationWithClan(leaderClan2);
 
-                // Krallık liderlerinin klan ilişkisi +7'nin üzerindeyse %5 şansla ticaret anlaşması yap
+                // If the kingdom leaders' clan relation is above +7, create a trade agreement with a 5% chance.
                 if (relation > 7f && MBRandom.RandomFloat < 0.05f)
                 {
-                    AddAgreement(new TradeAgreement(k1, k2, 0.20f, 60.0)); // 60 günlük %20 indirim
+                    AddAgreement(new TradeAgreement(k1, k2, 0.20f, 60.0)); // 20% discount for 60 days
                 }
             }
         }

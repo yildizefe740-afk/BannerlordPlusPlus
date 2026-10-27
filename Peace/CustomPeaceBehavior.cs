@@ -71,7 +71,7 @@ namespace BannerlordPlusPlus
                     TreasuryBehavior.AddToTreasury(k1, loserTreasury);
                     
                     InformationManager.DisplayMessage(new InformationMessage(
-                        $"{k1.Name}, {k2.Name} krallığının hazinesindeki {loserTreasury:N0} Dinarı tamamen yağmaladı!", Colors.Yellow));
+                        $"{k1.Name} completely plundered {loserTreasury:N0} denars from the treasury of {k2.Name}!", Colors.Yellow));
                 }
             }
 
@@ -130,7 +130,7 @@ namespace BannerlordPlusPlus
                 if (HasActiveTruce(k1, k2))
                 {
                     InformationManager.DisplayMessage(new InformationMessage(
-                        $"{k1.Name} ile {k2.Name} arasındaki ateşkes anlaşması henüz sona ermedi!", Colors.Red));
+                        $"The truce between {k1.Name} and {k2.Name} has not ended yet!", Colors.Red));
                 }
             }
         }
@@ -146,7 +146,7 @@ namespace BannerlordPlusPlus
                 Kingdom winner = Kingdom.All.FirstOrDefault(k => k.StringId == winnerId);
                 Kingdom loser = Kingdom.All.FirstOrDefault(k => k.StringId == loserId);
 
-                // Krallıklardan biri yok olduysa veya null ise listeden çıkar
+                // Remove the entry if either kingdom no longer exists or is null.
                 if (winner == null || loser == null || winner.IsEliminated || loser.IsEliminated)
                 {
                     _reparationTargets.Remove(winnerId);

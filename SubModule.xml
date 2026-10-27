@@ -6,9 +6,9 @@
   <SingleplayerModule value="true"/>
   <MultiplayerModule value="false"/>
   <DependedModules>
-    <!-- Harmony Bağımlılığı -->
+    <!-- Harmony dependency -->
     <DependedModule Id="Bannerlord.Harmony" DependentVersion="v2.4.2"/>
-    <!-- Native Oyun Bağımlılıkları (Sürüm yazılmaz) -->
+    <!-- Native game dependencies (no version specified) -->
     <DependedModule Id="Native"/>
     <DependedModule Id="SandBoxCore"/>
     <DependedModule Id="Sandbox"/>

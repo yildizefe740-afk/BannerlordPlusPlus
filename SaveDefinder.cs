@@ -9,7 +9,7 @@ namespace BannerlordPlusPlus
 
         protected override void DefineClassTypes()
         {
-            // Sınıflar ve enum'lar benzersiz ID'ler ile sırasıyla tanımlanır
+            // Assign unique IDs to classes and enums in sequence.
             AddClassDefinition(typeof(SubjectAttributes), 1);
             AddClassDefinition(typeof(DefensivePact), 2);
             AddClassDefinition(typeof(TradeAgreement), 3);
@@ -26,7 +26,7 @@ namespace BannerlordPlusPlus
 
         protected override void DefineContainerDefinitions()
         {
-            // SyncData içindeki Liste ve Sözlük yapıları
+            // Collection types used by SyncData.
             ConstructContainerDefinition(typeof(Dictionary<string, SubjectAttributes>));
             ConstructContainerDefinition(typeof(Dictionary<string, string>));
             ConstructContainerDefinition(typeof(List<DefensivePact>));

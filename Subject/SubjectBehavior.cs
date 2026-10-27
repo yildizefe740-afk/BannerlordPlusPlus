@@ -36,7 +36,7 @@ namespace BannerlordPlusPlus
             }
             if (_activeSubjects == null) _activeSubjects = new();
 
-            // Zaten aralarında bir ilişki var mı kontrolü
+            // Check whether a relationship already exists between them.
             if (GetSubjectBetween(senior, junior) != null)
             {
                 InformationManager.DisplayMessage(new InformationMessage($"AddSubject Warning: A subject relation already exists between {senior.Name} and {junior.Name}.", Colors.Yellow));

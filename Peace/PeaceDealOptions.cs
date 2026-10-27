@@ -6,14 +6,14 @@ namespace BannerlordPlusPlus
     public enum PeaceDealOptions
     {
         None = 0,
-        WarReparation = 1,      // Krallık günlük gelirinin %10'u tazminat kesintisi
-        TerritoryExchange = 2,  // Sınır/bölge takası mantığı
-        PlunderTreasury = 4,    // Hedef krallık hazinesindeki TÜM parayı çekip alma
-        Subjectize = 8,         // Krallığı tabi/vassal kılma
-        ClaimThrone = 16,       // Taht üzerinde hak iddia etme
-        ExecuteRuler = 32,      // Krallık liderini infaz etme
-        CededSettlement = 64,   // Yerleşim yeri devri
-        GainIndependence = 128, // Bağımsızlık kazanma
-        Truce = 256,            // 100 Günlük Ateşkes kilidi (Seçilmezse standart 30 gün)
+        WarReparation = 1,      // Deduct 10% of the kingdom's daily income as reparations.
+        TerritoryExchange = 2,  // Exchange border regions or territory.
+        PlunderTreasury = 4,    // Take all money from the target kingdom's treasury.
+        Subjectize = 8,         // Make the kingdom a subject or vassal.
+        ClaimThrone = 16,       // Claim the throne.
+        ExecuteRuler = 32,      // Execute the kingdom's ruler.
+        CededSettlement = 64,   // Transfer a settlement.
+        GainIndependence = 128, // Gain independence.
+        Truce = 256,            // 100-day truce lock (30 days by default if not selected).
     }
 }

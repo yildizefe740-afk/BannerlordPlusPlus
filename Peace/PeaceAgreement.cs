@@ -22,7 +22,7 @@ namespace BannerlordPlusPlus
         public Settlement CededSettlement { get; set; }
         public SubjectType TargetSubjectType;
 
-        // Ateşkes süre takibi
+        // Truce duration tracking.
         
         [SaveableProperty(7)]
         public double TruceDurationDays { get; set; }
@@ -35,7 +35,7 @@ namespace BannerlordPlusPlus
     
         }
 
-        // CustomPeaceBehavior'ın aradığı 3 parametreli constructor
+        // Three-parameter constructor used by CustomPeaceBehavior.
         public PeaceAgreement(Kingdom k1, Kingdom k2, double truceDurationDays)
         {
             WinnerKingdom = k1;
@@ -44,7 +44,7 @@ namespace BannerlordPlusPlus
             CreationDay = CampaignTime.Now.ToDays;
         }
 
-        // IsExpired ve Involves kontrol metodlari
+        // IsExpired and Involves checks.
         public bool IsExpired => (CampaignTime.Now.ToDays) >= (CreationDay + TruceDurationDays);
 
         public bool Involves(Kingdom k1, Kingdom k2)

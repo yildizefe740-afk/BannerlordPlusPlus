@@ -17,7 +17,7 @@ namespace BannerlordPlusPlus
         [SaveableField(4)]
         public bool IsCalled;
 
-        // BOŞ CONSTRUCTOR
+        // Parameterless constructor.
         public DefensivePact() { }
 
         public DefensivePact(Kingdom k1, Kingdom k2, double durationDays = 100)

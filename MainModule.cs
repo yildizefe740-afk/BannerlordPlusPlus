@@ -11,7 +11,7 @@ namespace BannerlordPlusPlus
         {
             base.OnSubModuleLoad();
             
-            // Harmony Yamalarını Yükle
+            // Load Harmony patches.
             var harmony = new Harmony("com.bannerlordplusplus.patch");
             harmony.PatchAll();
         }
@@ -22,7 +22,7 @@ namespace BannerlordPlusPlus
 
             if (gameStarterObject is CampaignGameStarter starter)
             {
-                // Bütün Behavior'ları Oyuna Ekle
+                // Add all behaviors to the game.
                 starter.AddBehavior(new SubjectBehavior());
                 starter.AddBehavior(new TradeAgreementBehavior());
                 starter.AddBehavior(new DefensivePactBehavior());

@@ -10,10 +10,10 @@ namespace BannerlordPlusPlus
 
         public override void RegisterEvents()
         {
-            // Günlük ilişki artışı ve temizlik için
+            // For daily relation increases and cleanup.
             CampaignEvents.DailyTickEvent.AddNonSerializedListener(this, OnDailyTick);
             
-            // Eşlerden biri öldüğünde paktın anında düşmesi için
+            // Remove the pact immediately when either spouse dies.
             CampaignEvents.HeroKilledEvent.AddNonSerializedListener(this, OnHeroKilled);
         }
 
@@ -26,10 +26,10 @@ namespace BannerlordPlusPlus
         {
             if (_marriages is null) return;
 
-            // 1. Ölen, boşanan veya RulingClan statüsünü kaybeden geçersiz paktları listeden temizle
+            // 1. Remove invalid pacts if a spouse died, divorced, or lost RulingClan status.
             _marriages.RemoveAll(m => m == null || !m.IsValid);
 
-            // 2. Geçerli paktlar için her gün krallık liderleri arasındaki ilişkiyi artır
+            // 2. Increase the relation between kingdom leaders daily for valid pacts.
             foreach (var pact in _marriages)
             {
                 if (pact.Kingdom1 == null || pact.Kingdom2 == null) continue;
@@ -39,7 +39,7 @@ namespace BannerlordPlusPlus
 
                 if (leader1 != null && leader2 != null && leader1 != leader2)
                 {
-                    // Yönetici klanlar arası evlilik sebebiyle liderlerin ilişkisini +1 artırır
+                    // Increase leader relations by 1 due to the marriage between ruling clans.
                     ChangeRelationAction.ApplyRelationChangeBetweenHeroes(leader1, leader2, 1);
                 }
             }
@@ -47,11 +47,11 @@ namespace BannerlordPlusPlus
 
         private void OnHeroKilled(Hero victim, Hero killer, KillCharacterAction.KillCharacterActionDetail detail, bool showNotification)
         {
-            // Savaşta veya yaşlılıktan ölen karakter yönetici evlilik paktında varsa paktı temizle
+            // Remove the pact if a character in a ruling marriage pact dies in battle or of old age.
             _marriages?.RemoveAll(m => m == null || !m.IsValid);
         }
 
-        // Yeni bir evlilik paktı eklemek için yardımcı metod
+        // Helper method to add a marriage pact.
         public void AddMarriagePact(MarriagePact pact)
         {
             if (pact != null && pact.IsValid && !_marriages.Contains(pact))

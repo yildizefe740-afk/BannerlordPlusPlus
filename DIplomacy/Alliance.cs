@@ -12,7 +12,7 @@ namespace BannerlordPlusPlus
         [SaveableField(3)]
         public bool IsCalled;
         [SaveableField(4)]
-        public float Trust = 50f; //beraking condition
+        public  float Trust = 50f; //breaking condition
 
         public Alliance(){} // for save
 

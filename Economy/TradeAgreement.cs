@@ -17,7 +17,7 @@ namespace BannerlordPlusPlus
         [SaveableField(4)]
         public double ExpirationDateDays;
 
-        // Bannerlord SaveSystem için BOŞ CONSTRUCTOR ZORUNLUDUR!
+        // A parameterless constructor is required by the Bannerlord SaveSystem.
         public TradeAgreement() { }
 
         public TradeAgreement(Kingdom k1, Kingdom k2, float discountRate, double durationDays)

@@ -38,7 +38,7 @@ namespace BannerlordPlusPlus
         [SaveableProperty(8)]
         public bool IsRebelling { get; set; }
 
-        // Helper Property'ler (Save/Load'u bozmadan nesnelere güvenle erişim sağlar)
+        // Helper properties provide safe access to objects without breaking save/load.
         public Kingdom SeniorKingdom => Kingdom.All.FirstOrDefault(k => k.StringId == SeniorKingdomId);
         public Kingdom JuniorKingdom => Kingdom.All.FirstOrDefault(k => k.StringId == JuniorKingdomId);
 

@@ -277,5 +277,13 @@ namespace BannerlordPlusPlus
         {
             InformationManager.ShowInquiry(new InquiryData(title, text, true, false, "Okay", "", null, null));
         }
+
+        public static void ShowNonAggressionPactWarning(Kingdom otherKingdom)
+        {
+            string kingdomName = otherKingdom?.Name?.ToString() ?? "this kingdom";
+            InformationManager.DisplayMessage(new InformationMessage(
+                $"You already have a non-aggression pact with {kingdomName}. You cannot declare war while it is active.",
+                Colors.Red));
+        }
     }
 }

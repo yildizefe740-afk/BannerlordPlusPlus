@@ -2,18 +2,17 @@
 <Module>
   <Id value="BannerlordPlusPlus"/>
   <Name value="BannerlordPlusPlus"/>
-  <Version value="v1.1.0"/>
+  <Version value="v1.1.1"/>
   <SingleplayerModule value="true"/>
   <MultiplayerModule value="false"/>
   <DependedModules>
     <!-- Harmony dependency -->
     <DependedModule Id="Bannerlord.Harmony" DependentVersion="v2.4.2"/>
-    <!-- Native game dependencies (no version specified) -->
+    <!-- Native game dependencies (no version specified).
+         StoryMode ve CustomBattle kaldirildi: DLL bu modullere referans vermiyor. -->
     <DependedModule Id="Native"/>
     <DependedModule Id="SandBoxCore"/>
     <DependedModule Id="Sandbox"/>
-    <DependedModule Id="CustomBattle"/>
-    <DependedModule Id="StoryMode"/>
   </DependedModules>
   <SubModules>
     <SubModule>

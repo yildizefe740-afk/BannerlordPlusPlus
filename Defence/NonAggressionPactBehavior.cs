@@ -4,16 +4,28 @@ using HarmonyLib;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
 using TaleWorlds.Core;
+using TaleWorlds.Library;
 
 namespace BannerlordPlusPlus
 {
     public class NonAggressionPactBehavior : CampaignBehaviorBase
     {
-        private static List<NonAggressionPact> _NApact = [];
+        // Keep this static for existing callers, but reset it for each new behavior instance.
+        private static List<NonAggressionPact> _NApact = new List<NonAggressionPact>();
+
+        public NonAggressionPactBehavior()
+        {
+            // Prevent pacts from a previous session from leaking into a new game or save.
+            // When loading a save, SyncData replaces this list with the saved data.
+            _NApact = new List<NonAggressionPact>();
+        }
 
         public override void SyncData(IDataStore dataStore)
         {
-            dataStore.SyncData("BannerlordPlusPlus", ref _NApact);
+            dataStore.SyncData("BannerlordPlusPlus_NonAggressionPacts", ref _NApact);
+
+            if (dataStore.IsLoading && _NApact == null)
+                _NApact = new List<NonAggressionPact>();
         }
 
         public override void RegisterEvents()
@@ -36,15 +48,16 @@ namespace BannerlordPlusPlus
 
         public static bool AddPact(Kingdom k1, Kingdom k2, double durationDays)
         {
+            if (k1 == null || k2 == null || k1 == k2)
+                return false;
+
             if (!SubjectBehavior.CanCreateDiplomaticPact(k1, k2))
                 return false;
 
             if (_NApact == null)
                 _NApact = new List<NonAggressionPact>();
 
-            if (_NApact.Any(p => p != null && !p.IsExpired &&
-                                 ((p.Kingdom1Id == k1.StringId && p.Kingdom2Id == k2.StringId) ||
-                                  (p.Kingdom1Id == k2.StringId && p.Kingdom2Id == k1.StringId))))
+            if (IsPactActive(k1.StringId, k2.StringId))
                 return false;
 
             _NApact.RemoveAll(p => p == null || p.IsExpired);
@@ -52,57 +65,77 @@ namespace BannerlordPlusPlus
             return true;
         }
 
-        public bool HasNonAggressionPact(Kingdom k1, Kingdom k2)
+        /// <summary>Removes pacts when a kingdom becomes a vassal/march or is destroyed.</summary>
+        public static int RemoveAllFor(string kingdomId)
         {
-            if (_NApact == null || k1 == null || k2 == null)
+            if (_NApact == null || string.IsNullOrEmpty(kingdomId))
+                return 0;
+
+            return _NApact.RemoveAll(p => p != null && (p.Kingdom1Id == kingdomId || p.Kingdom2Id == kingdomId));
+        }
+
+        public static bool IsPactActive(string id1, string id2)
+        {
+            if (_NApact == null || string.IsNullOrEmpty(id1) || string.IsNullOrEmpty(id2))
                 return false;
 
             return _NApact.Any(p =>
                 p != null && !p.IsExpired &&
-                ((p.Kingdom1Id == k1.StringId && p.Kingdom2Id == k2.StringId) ||
-                 (p.Kingdom1Id == k2.StringId && p.Kingdom2Id == k1.StringId)));
+                ((p.Kingdom1Id == id1 && p.Kingdom2Id == id2) ||
+                 (p.Kingdom1Id == id2 && p.Kingdom2Id == id1)));
         }
 
-        [HarmonyPatch(typeof(DeclareWarAction), "ApplyNonAggresion")]
-        public class ApplyNonAggresionPact
+        public bool HasNonAggressionPact(Kingdom k1, Kingdom k2)
+        {
+            if (k1 == null || k2 == null)
+                return false;
+
+            return IsPactActive(k1.StringId, k2.StringId);
+        }
+
+        // ApplyInternal handles war declarations from decisions, defaults, rebellions, and other sources.
+        [HarmonyPatch(typeof(DeclareWarAction), "ApplyInternal")]
+        public static class ApplyNonAggressionPact
         {
             public static bool Prefix(IFaction faction1, IFaction faction2)
             {
                 if (faction1 == null || faction2 == null)
                     return true;
 
-                if (_NApact == null)
+                if (!IsPactActive(faction1.StringId, faction2.StringId))
                     return true;
 
-                bool hasActivePact = _NApact.Any(p =>
-                    p != null && !p.IsExpired &&
-                    ((p.Kingdom1Id == faction1.StringId && p.Kingdom2Id == faction2.StringId) ||
-                     (p.Kingdom1Id == faction2.StringId && p.Kingdom2Id == faction1.StringId))
-                );
-
-                if (hasActivePact)
+                // Explain the block to the player without spamming messages for AI attempts.
+                Kingdom playerKingdom = Clan.PlayerClan?.Kingdom;
+                if (playerKingdom != null && faction1 == playerKingdom)
                 {
-                    return false; 
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        $"A non-aggression pact with {faction2.Name} prevents you from declaring war.",
+                        Colors.Yellow));
                 }
 
-                return true;
+                return false;
             }
-        }  
+        }
 
         public void ProcessAINAP()
         {
-            var kingdoms = Kingdom.All.Where(k => k != null && !k.IsEliminated).ToList();
-            
-            for(int i = 0; i < kingdoms.Count; i++)
+            Kingdom playerKingdom = Clan.PlayerClan?.Kingdom;
+
+            var kingdoms = Kingdom.All
+                .Where(k => k != null && !k.IsEliminated && k != playerKingdom) // Do not create pacts on behalf of the player.
+                .ToList();
+
+            for (int i = 0; i < kingdoms.Count; i++)
             {
-                for(int j = i+1 ; j < kingdoms.Count; j++)
+                for (int j = i + 1; j < kingdoms.Count; j++)
                 {
                     var k1 = kingdoms[i];
                     var k2 = kingdoms[j];
 
-                    if(k1.IsAtWarWith(k2) ||
-                       HasNonAggressionPact(k1, k2) ||
-                       !SubjectBehavior.CanCreateDiplomaticPact(k1, k2))
+                    if (k1.IsAtWarWith(k2) ||
+                        HasNonAggressionPact(k1, k2) ||
+                        !SubjectBehavior.CanCreateDiplomaticPact(k1, k2))
                     {
                         continue;
                     }
@@ -110,17 +143,17 @@ namespace BannerlordPlusPlus
                     Clan rulingClan1 = k1.RulingClan;
                     Clan rulingClan2 = k2.RulingClan;
 
-                    if(rulingClan1 != null && rulingClan2 != null)
+                    if (rulingClan1 != null && rulingClan2 != null)
                     {
                         float relation = rulingClan1.GetRelationWithClan(rulingClan2);
 
-                        if(relation > 15f && MBRandom.RandomFloat < 0.03f)
+                        if (relation > 15f && MBRandom.RandomFloat < 0.03f)
                         {
-                            NonAggressionPactBehavior.AddPact(k1, k2, 60.0);
+                            AddPact(k1, k2, 60.0);
                         }
                     }
                 }
             }
-        }    
+        }
     }
 }

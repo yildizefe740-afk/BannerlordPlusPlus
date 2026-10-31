@@ -290,6 +290,24 @@ namespace BannerlordPlusPlus
                 IsRestrictedSubjectType(subject.Type));
         }
 
+        public static IEnumerable<SubjectAttributes> GetSubjectsOf(Kingdom senior)
+        {
+            if (Instance == null ||
+                Instance._activeSubjects == null ||
+                senior == null)
+            {
+                return Enumerable.Empty<SubjectAttributes>();
+            }
+
+            return Instance._activeSubjects.Values
+                .Where(subject =>
+                    subject != null &&
+                    subject.SeniorKingdomId == senior.StringId &&
+                    subject.JuniorKingdom != null &&
+                    !subject.JuniorKingdom.IsEliminated)
+                .ToList();
+        }
+
         public static bool IsRestrictedSubjectType(SubjectType type)
         {
             return type == SubjectType.Vassal || type == SubjectType.March;

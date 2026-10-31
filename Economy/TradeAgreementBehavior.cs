@@ -50,6 +50,20 @@ namespace BannerlordPlusPlus
                  (a.Kingdom1Id == k2.StringId && a.Kingdom2Id == k1.StringId)));
         }
 
+        public IEnumerable<TradeAgreement> GetActiveAgreementsFor(Kingdom kingdom)
+        {
+            if (kingdom == null || _activeAgreements == null)
+                return Enumerable.Empty<TradeAgreement>();
+
+            return _activeAgreements
+                .Where(agreement =>
+                    agreement != null &&
+                    !agreement.IsExpired &&
+                    (agreement.Kingdom1Id == kingdom.StringId ||
+                     agreement.Kingdom2Id == kingdom.StringId))
+                .ToList();
+        }
+
         public void AddAgreement(TradeAgreement agreement)
         {
             if (agreement == null ||

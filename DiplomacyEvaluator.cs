@@ -6,6 +6,7 @@ namespace BannerlordPlusPlus
     {
         public enum ProposalType
         {
+            Alliance,
             TradeAgreement,
             DefensivePact,
             NonAggressionPact
@@ -40,7 +41,15 @@ namespace BannerlordPlusPlus
             float score = 0f;
 
             // Clan Relations (-100 to +100)
-            float relation = target.RulingClan.GetRelationWithClan(proposer.RulingClan);
+            Clan proposerRulingClan = proposer.RulingClan;
+            Clan targetRulingClan = target.RulingClan;
+            if (proposerRulingClan == null || targetRulingClan == null)
+            {
+                reason = "One of the kingdoms has no ruling clan available for negotiations.";
+                return false;
+            }
+
+            float relation = targetRulingClan.GetRelationWithClan(proposerRulingClan);
             score += relation * 0.5f; // Max +50 or -50 points
 
             // Power Ratio Balance
@@ -58,7 +67,12 @@ namespace BannerlordPlusPlus
             }
 
             // Threshold based on proposal type
-            float requiredScore = (type == ProposalType.DefensivePact) ? 25f : 10f;
+            float requiredScore = type switch
+            {
+                ProposalType.Alliance => 35f,
+                ProposalType.DefensivePact => 25f,
+                _ => 10f
+            };
 
             if (score >= requiredScore)
             {

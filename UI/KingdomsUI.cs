@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using TaleWorlds.CampaignSystem;
+using TaleWorlds.CampaignSystem.Election;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
 
@@ -58,6 +59,7 @@ namespace BannerlordPlusPlus
             MethodInfo primaryBannerColorGetter = GetRequiredMethod("get_PrimaryBannerColor");
             MethodInfo secondaryBannerColorGetter = GetRequiredMethod("get_SecondaryBannerColor");
             MethodInfo bannerGetter = GetRequiredMethod("get_Banner");
+            ConstructorInfo kingdomManagementConstructor = GetKingdomManagementConstructor();
 
             var harmony = new Harmony(HarmonyId);
             harmony.Patch(
@@ -79,14 +81,80 @@ namespace BannerlordPlusPlus
             harmony.Patch(
                 bannerGetter,
                 postfix: new HarmonyMethod(typeof(KingdomBannerPatch), nameof(KingdomBannerPatch.Postfix)));
+            harmony.Patch(
+                kingdomManagementConstructor,
+                postfix: new HarmonyMethod(
+                    typeof(KingdomManagementDiplomacyPatch),
+                    nameof(KingdomManagementDiplomacyPatch.Postfix)));
 
             _patchesApplied = true;
+        }
+
+        private static ConstructorInfo GetKingdomManagementConstructor()
+        {
+            Type viewModelType = AccessTools.TypeByName(
+                "TaleWorlds.CampaignSystem.ViewModelCollection.KingdomManagement.KingdomManagementVM");
+            if (viewModelType == null)
+                throw new TypeLoadException("Could not find KingdomManagementVM.");
+
+            ConstructorInfo constructor = viewModelType
+                .GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .FirstOrDefault(candidate =>
+                {
+                    ParameterInfo[] parameters = candidate.GetParameters();
+                    return parameters.Length == 3 &&
+                           parameters[0].ParameterType == typeof(Action) &&
+                           parameters[1].ParameterType == typeof(Action) &&
+                           parameters[2].ParameterType.IsGenericType &&
+                           parameters[2].ParameterType.GetGenericTypeDefinition() == typeof(Action<>);
+                });
+
+            return constructor
+                ?? throw new MissingMethodException(viewModelType.FullName, ".ctor(Action, Action, Action<T>)");
         }
 
         private static MethodInfo GetRequiredMethod(string methodName)
         {
             return AccessTools.Method(typeof(Kingdom), methodName)
                 ?? throw new MissingMethodException(typeof(Kingdom).FullName, methodName);
+        }
+
+        private static class KingdomManagementDiplomacyPatch
+        {
+            public static void Postfix(object __instance)
+            {
+                if (__instance == null)
+                    return;
+
+                PropertyInfo diplomacyProperty = AccessTools.Property(
+                    __instance.GetType(),
+                    "Diplomacy");
+                if (diplomacyProperty == null || !diplomacyProperty.CanWrite)
+                    throw new MissingMemberException(__instance.GetType().FullName, "Diplomacy");
+
+                object nativeDiplomacy = diplomacyProperty.GetValue(__instance);
+                if (nativeDiplomacy == null || nativeDiplomacy is KingdomDiplomacyScreenVM)
+                    return;
+
+                FieldInfo decisionCallbackField = AccessTools.Field(
+                    nativeDiplomacy.GetType(),
+                    "_forceDecision");
+                if (decisionCallbackField == null)
+                {
+                    throw new MissingFieldException(
+                        nativeDiplomacy.GetType().FullName,
+                        "_forceDecision");
+                }
+
+                var forceDecision = decisionCallbackField.GetValue(nativeDiplomacy)
+                    as Action<KingdomDecision>;
+                if (forceDecision == null)
+                    throw new InvalidOperationException("The native diplomacy decision callback is unavailable.");
+
+                diplomacyProperty.SetValue(
+                    __instance,
+                    new KingdomDiplomacyScreenVM(forceDecision));
+            }
         }
 
         private static Snapshot Current()

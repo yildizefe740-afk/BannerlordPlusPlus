@@ -88,6 +88,20 @@ namespace BannerlordPlusPlus
                  (p.Kingdom1Id == k2.StringId && p.Kingdom2Id == k1.StringId)));
         }
 
+        public IEnumerable<DefensivePact> GetActivePactsFor(Kingdom kingdom)
+        {
+            if (kingdom == null || _pacts == null)
+                return Enumerable.Empty<DefensivePact>();
+
+            return _pacts
+                .Where(pact =>
+                    pact != null &&
+                    !pact.IsExpired &&
+                    (pact.Kingdom1Id == kingdom.StringId ||
+                     pact.Kingdom2Id == kingdom.StringId))
+                .ToList();
+        }
+
         public void AddPact(DefensivePact pact)
         {
             if (pact == null ||

@@ -57,6 +57,16 @@ namespace BannerlordPlusPlus
             return GetAllianceBetween(k1, k2) != null;
         }
 
+        public IEnumerable<Alliance> GetActiveAlliancesFor(Kingdom kingdom)
+        {
+            if (kingdom == null || _alliances == null)
+                return Enumerable.Empty<Alliance>();
+
+            return _alliances
+                .Where(alliance => Involves(alliance, kingdom))
+                .ToList();
+        }
+
         public Alliance GetAllianceBetween(Kingdom k1, Kingdom k2)
         {
             if (k1 == null || k2 == null || _alliances == null) return null;

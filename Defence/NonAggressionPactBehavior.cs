@@ -93,6 +93,20 @@ namespace BannerlordPlusPlus
             return IsPactActive(k1.StringId, k2.StringId);
         }
 
+        public static IEnumerable<NonAggressionPact> GetActivePactsFor(Kingdom kingdom)
+        {
+            if (kingdom == null || _NApact == null)
+                return Enumerable.Empty<NonAggressionPact>();
+
+            return _NApact
+                .Where(pact =>
+                    pact != null &&
+                    !pact.IsExpired &&
+                    (pact.Kingdom1Id == kingdom.StringId ||
+                     pact.Kingdom2Id == kingdom.StringId))
+                .ToList();
+        }
+
         // ApplyInternal handles war declarations from decisions, defaults, rebellions, and other sources.
         [HarmonyPatch(typeof(DeclareWarAction), "ApplyInternal")]
         public static class ApplyNonAggressionPact

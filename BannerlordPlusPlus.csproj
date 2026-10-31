@@ -8,6 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Reference Include="TaleWorlds.CampaignSystem.ViewModelCollection">
+      <HintPath>$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.CampaignSystem.ViewModelCollection.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+
     <!-- Harmony reference (loaded from the Bannerlord.Harmony Workshop mod) -->
     <!-- PrivateAssets/Private=False prevents 0Harmony.dll from being copied to the output (bin) -->
     <Reference Include="0Harmony">
@@ -49,6 +54,12 @@
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Mount &amp; Blade II Bannerlord\bin\Win64_Shipping_Client\TaleWorlds.SaveSystem.dll</HintPath>
       <Private>False</Private>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="GUI\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

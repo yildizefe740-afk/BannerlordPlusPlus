@@ -8,11 +8,11 @@
   <DependedModules>
     <!-- Harmony dependency -->
     <DependedModule Id="Bannerlord.Harmony" DependentVersion="v2.4.2"/>
-    <!-- Native game dependencies (no version specified).
-         StoryMode ve CustomBattle kaldirildi: DLL bu modullere referans vermiyor. -->
+    <!-- Native game dependencies (no version specified). -->
     <DependedModule Id="Native"/>
     <DependedModule Id="SandBoxCore"/>
     <DependedModule Id="Sandbox"/>
+    <DependedModule Id="StoryMode"/>
   </DependedModules>
   <SubModules>
     <SubModule>

@@ -4,13 +4,19 @@ using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.Localization;  
 using TaleWorlds.Library;
 using HarmonyLib;
+using System;
 
 namespace BannerlordPlusPlus
 {
     public class TreasuryBehavior : CampaignBehaviorBase
     {
+        private const string HarmonyId = "com.bannerlordplusplus.patch";
+        private double _campaignStartDay;
+        private bool _financePatchesApplied;
+
         public override void RegisterEvents()
         {
+            _campaignStartDay = CampaignTime.Now.ToDays;
             // Register daily tick listener to handle daily dynamic treasury updates
             CampaignEvents.DailyTickEvent.AddNonSerializedListener(this, OnDailyTick);
         }
@@ -22,6 +28,13 @@ namespace BannerlordPlusPlus
 
         private void OnDailyTick()
         {
+            if (!_financePatchesApplied &&
+                CampaignTime.Now.ToDays - _campaignStartDay >= 1.0)
+            {
+                ApplyFinancePatches();
+                _financePatchesApplied = true;
+            }
+
             // Iterate through all active kingdoms to collect taxes from subjects
             foreach (Kingdom kingdom in Kingdom.All)
             {
@@ -42,6 +55,38 @@ namespace BannerlordPlusPlus
                     }
                 }
             }
+        }
+
+        private static void ApplyFinancePatches()
+        {
+            var caravanIncomeMethod = AccessTools.Method(
+                typeof(DefaultClanFinanceModel),
+                "AddIncomeFromParty");
+            var kingdomBudgetMethod = AccessTools.Method(
+                typeof(DefaultClanFinanceModel),
+                "AddIncomeFromKingdomBudget");
+
+            if (caravanIncomeMethod == null)
+                throw new MissingMethodException(
+                    typeof(DefaultClanFinanceModel).FullName,
+                    "AddIncomeFromParty");
+
+            if (kingdomBudgetMethod == null)
+                throw new MissingMethodException(
+                    typeof(DefaultClanFinanceModel).FullName,
+                    "AddIncomeFromKingdomBudget");
+
+            var harmony = new Harmony(HarmonyId);
+            harmony.Patch(
+                caravanIncomeMethod,
+                postfix: new HarmonyMethod(
+                    typeof(CaravanIncomeTaxPatch),
+                    nameof(CaravanIncomeTaxPatch.Postfix)));
+            harmony.Patch(
+                kingdomBudgetMethod,
+                prefix: new HarmonyMethod(
+                    typeof(BlockKingdomBudgetDistributionPatch),
+                    nameof(BlockKingdomBudgetDistributionPatch.Prefix)));
         }
 
         private SubjectAttributes GetSubjectForJunior(Kingdom subjectKingdom)
@@ -77,7 +122,6 @@ namespace BannerlordPlusPlus
         }
 
         // --- CARAVAN TAX PATCH ---
-        [HarmonyPatch(typeof(DefaultClanFinanceModel), "AddIncomeFromParty")]
         public class CaravanIncomeTaxPatch
         {
             public static void Postfix(MobileParty party, Clan clan, ref ExplainedNumber goldChange, bool applyWithdrawals, ref int __result)
@@ -105,13 +149,12 @@ namespace BannerlordPlusPlus
 
         // --- BLOCK ONLY DEFAULT KINGDOM BUDGET SUPPORT ---
         // Specifically targets private method 'AddIncomeFromKingdomBudget' to disable free kingdom handouts
-        [HarmonyPatch(typeof(DefaultClanFinanceModel), "AddIncomeFromKingdomBudget")]
         public class BlockKingdomBudgetDistributionPatch
         {
             public static bool Prefix()
             {
                 // Disables automatic native kingdom budget handouts to clans
-                return false; 
+                return false;
             }
         }
 

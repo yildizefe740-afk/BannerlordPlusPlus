@@ -10,7 +10,9 @@ namespace BannerlordPlusPlus
         protected override void OnSubModuleLoad()
         {
             base.OnSubModuleLoad();
-            
+
+            CrashLogger.Initialize();
+
             // Load Harmony patches.
             var harmony = new Harmony("com.bannerlordplusplus.patch");
             harmony.PatchAll();

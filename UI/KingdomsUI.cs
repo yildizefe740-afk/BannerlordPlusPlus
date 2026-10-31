@@ -1,7 +1,9 @@
 using HarmonyLib;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
@@ -10,6 +12,9 @@ namespace BannerlordPlusPlus
 {
     public static class KingdomsUI
     {
+        private const string HarmonyId = "com.bannerlordplusplus.patch";
+        private static bool _patchesApplied;
+
         private static readonly uint SettlementLightBlue =
             new Color(0.58f, 0.78f, 1f, 1f).ToUnsignedInteger();
 
@@ -41,6 +46,47 @@ namespace BannerlordPlusPlus
         public static void Invalidate()
         {
             _dirty = true;
+        }
+
+        public static void ApplyPatches()
+        {
+            if (_patchesApplied)
+                return;
+
+            MethodInfo colorGetter = GetRequiredMethod("get_Color");
+            MethodInfo color2Getter = GetRequiredMethod("get_Color2");
+            MethodInfo primaryBannerColorGetter = GetRequiredMethod("get_PrimaryBannerColor");
+            MethodInfo secondaryBannerColorGetter = GetRequiredMethod("get_SecondaryBannerColor");
+            MethodInfo bannerGetter = GetRequiredMethod("get_Banner");
+
+            var harmony = new Harmony(HarmonyId);
+            harmony.Patch(
+                colorGetter,
+                prefix: new HarmonyMethod(typeof(KingdomColorPatch), nameof(KingdomColorPatch.Prefix)));
+            harmony.Patch(
+                color2Getter,
+                prefix: new HarmonyMethod(typeof(KingdomColor2Patch), nameof(KingdomColor2Patch.Prefix)));
+            harmony.Patch(
+                primaryBannerColorGetter,
+                prefix: new HarmonyMethod(
+                    typeof(KingdomPrimaryBannerColorPatch),
+                    nameof(KingdomPrimaryBannerColorPatch.Prefix)));
+            harmony.Patch(
+                secondaryBannerColorGetter,
+                prefix: new HarmonyMethod(
+                    typeof(KingdomSecondaryBannerColorPatch),
+                    nameof(KingdomSecondaryBannerColorPatch.Prefix)));
+            harmony.Patch(
+                bannerGetter,
+                postfix: new HarmonyMethod(typeof(KingdomBannerPatch), nameof(KingdomBannerPatch.Postfix)));
+
+            _patchesApplied = true;
+        }
+
+        private static MethodInfo GetRequiredMethod(string methodName)
+        {
+            return AccessTools.Method(typeof(Kingdom), methodName)
+                ?? throw new MissingMethodException(typeof(Kingdom).FullName, methodName);
         }
 
         private static Snapshot Current()
@@ -110,7 +156,6 @@ namespace BannerlordPlusPlus
             return s;
         }
 
-        [HarmonyPatch(typeof(Kingdom), "get_Color")]
         public static class KingdomColorPatch
         {
             public static bool Prefix(Kingdom __instance, ref uint __result)
@@ -123,7 +168,6 @@ namespace BannerlordPlusPlus
             }
         }
 
-        [HarmonyPatch(typeof(Kingdom), "get_Color2")]
         public static class KingdomColor2Patch
         {
             public static bool Prefix(Kingdom __instance, ref uint __result)
@@ -136,7 +180,6 @@ namespace BannerlordPlusPlus
             }
         }
 
-        [HarmonyPatch(typeof(Kingdom), "get_PrimaryBannerColor")]
         public static class KingdomPrimaryBannerColorPatch
         {
             public static bool Prefix(Kingdom __instance, ref uint __result)
@@ -150,7 +193,6 @@ namespace BannerlordPlusPlus
             }
         }
 
-        [HarmonyPatch(typeof(Kingdom), "get_SecondaryBannerColor")]
         public static class KingdomSecondaryBannerColorPatch
         {
             public static bool Prefix(Kingdom __instance, ref uint __result)
@@ -164,7 +206,6 @@ namespace BannerlordPlusPlus
             }
         }
 
-        [HarmonyPatch(typeof(Kingdom), "get_Banner")]
         public static class KingdomBannerPatch
         {
             public static void Postfix(Kingdom __instance, ref Banner __result)

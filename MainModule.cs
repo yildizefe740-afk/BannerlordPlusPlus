@@ -12,6 +12,7 @@ namespace BannerlordPlusPlus
             base.OnSubModuleLoad();
 
             CrashLogger.Initialize();
+            FinanceStartupGuard.ApplyPatch();
 
             // Load Harmony patches.
             var harmony = new Harmony("com.bannerlordplusplus.patch");

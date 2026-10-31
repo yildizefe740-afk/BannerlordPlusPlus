@@ -11,12 +11,11 @@ namespace BannerlordPlusPlus
     public class TreasuryBehavior : CampaignBehaviorBase
     {
         private const string HarmonyId = "com.bannerlordplusplus.patch";
-        private double _campaignStartDay;
-        private bool _financePatchesApplied;
+        private static bool _delayedPatchesApplied;
 
         public override void RegisterEvents()
         {
-            _campaignStartDay = CampaignTime.Now.ToDays;
+            FinanceStartupGuard.BeginCampaign();
             // Register daily tick listener to handle daily dynamic treasury updates
             CampaignEvents.DailyTickEvent.AddNonSerializedListener(this, OnDailyTick);
         }
@@ -28,12 +27,7 @@ namespace BannerlordPlusPlus
 
         private void OnDailyTick()
         {
-            if (!_financePatchesApplied &&
-                CampaignTime.Now.ToDays - _campaignStartDay >= 1.0)
-            {
-                ApplyFinancePatches();
-                _financePatchesApplied = true;
-            }
+            EnsureDelayedPatchesApplied(refreshDeferredUpdate: true);
 
             // Iterate through all active kingdoms to collect taxes from subjects
             foreach (Kingdom kingdom in Kingdom.All)
@@ -57,7 +51,29 @@ namespace BannerlordPlusPlus
             }
         }
 
-        private static void ApplyFinancePatches()
+        public static bool EnsureDelayedPatchesApplied(bool refreshDeferredUpdate)
+        {
+            if (_delayedPatchesApplied)
+            {
+                if (refreshDeferredUpdate)
+                    FinanceStartupGuard.RefreshDeferredUpdate();
+
+                return true;
+            }
+
+            if (!FinanceStartupGuard.IsFinanceReady)
+                return false;
+
+            ApplyDelayedPatches();
+            _delayedPatchesApplied = true;
+
+            if (refreshDeferredUpdate)
+                FinanceStartupGuard.RefreshDeferredUpdate();
+
+            return true;
+        }
+
+        private static void ApplyDelayedPatches()
         {
             var caravanIncomeMethod = AccessTools.Method(
                 typeof(DefaultClanFinanceModel),
@@ -75,6 +91,8 @@ namespace BannerlordPlusPlus
                 throw new MissingMethodException(
                     typeof(DefaultClanFinanceModel).FullName,
                     "AddIncomeFromKingdomBudget");
+
+            KingdomsUI.ApplyPatches();
 
             var harmony = new Harmony(HarmonyId);
             harmony.Patch(

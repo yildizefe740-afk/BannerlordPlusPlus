@@ -50,12 +50,14 @@
               </Children>
             </ListPanel>
 
-            <ScrollablePanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" AutoHideScrollBars="true" ClipRect="DiplomacyClipRect" InnerPanel="DiplomacyClipRect\DiplomacyContent" VerticalScrollbar="..\DiplomacyScrollbar">
+            <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent">
               <Children>
-                <Widget Id="DiplomacyClipRect" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" ClipContents="true">
+                <ScrollablePanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" AutoHideScrollBars="true" ClipRect="DiplomacyClipRect" InnerPanel="DiplomacyClipRect\DiplomacyContent" VerticalScrollbar="..\DiplomacyScrollbar">
                   <Children>
-                    <ListPanel Id="DiplomacyContent" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalTopToBottom">
+                    <Widget Id="DiplomacyClipRect" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" ClipContents="true">
                       <Children>
+                        <ListPanel Id="DiplomacyContent" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalTopToBottom">
+                          <Children>
                         <NavigatableListPanel DataSource="{TreatyCategories}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" IsVisible="@IsTreatyListVisible" StackLayout.LayoutMethod="VerticalTopToBottom">
                           <ItemTemplate>
                             <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" MarginBottom="5" StackLayout.LayoutMethod="VerticalTopToBottom">
@@ -302,10 +304,12 @@
                             </ButtonWidget>
                           </Children>
                         </ListPanel>
+                          </Children>
+                        </ListPanel>
                       </Children>
-                    </ListPanel>
+                    </Widget>
                   </Children>
-                </Widget>
+                </ScrollablePanel>
                 <ScrollbarWidget Id="DiplomacyScrollbar" WidthSizePolicy="Fixed" HeightSizePolicy="StretchToParent" SuggestedWidth="8" HorizontalAlignment="Right" VerticalAlignment="Center" AlignmentAxis="Vertical" Handle="DiplomacyScrollbarHandle" MaxValue="100" MinValue="0">
                   <Children>
                     <Widget WidthSizePolicy="Fixed" HeightSizePolicy="StretchToParent" SuggestedWidth="4" HorizontalAlignment="Center" Sprite="BlankWhiteSquare_9" AlphaFactor="0.2" Color="#472203FF" />
@@ -313,7 +317,7 @@
                   </Children>
                 </ScrollbarWidget>
               </Children>
-            </ScrollablePanel>
+            </ListPanel>
           </Children>
         </BrushListPanel>
 

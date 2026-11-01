@@ -662,40 +662,6 @@
 
                 <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" VerticalAlignment="Center" MarginLeft="25" MarginRight="25" Brush.FontSize="40" IsHidden="@IsAcceptableItemSelected" Text="@NoItemSelectedText" />
 
-				        <Widget WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" HorizontalAlignment="Center" VerticalAlignment="Bottom" MarginBottom="20" IsVisible="@IsAcceptableItemSelected">
-					        <Children>
-                    <!-- Proposal Action Buttons-->
-                    <ListPanel DataSource="{Actions}" WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren">
-                      <ItemTemplate>
-                        <ListPanel WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalTopToBottom" MarginLeft="5" MarginRight="5" VerticalAlignment="Bottom">
-                          <Children>
-                            <TextWidget WidthSizePolicy="Fixed" SuggestedWidth="330" HeightSizePolicy="CoverChildren" Brush="Kingdom.ParagraphSmall.Text" MarginBottom="10" Text="@Explanation" IsEnabled="@IsEnabled" DoNotAcceptEvents="true" />
-
-                            <NavigationScopeTargeter ScopeID="KingdomDiplomacyActionScope" ScopeParent="..\KingdomDiplomacyAction" ScopeMovements="Horizontal" ExtendDiscoveryAreaLeft="100" ExtendDiscoveryAreaRight="100" DiscoveryAreaOffsetY="-35" />
-                            <Widget Id="KingdomDiplomacyAction" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="227" SuggestedHeight="30" HorizontalAlignment="Center" VerticalAlignment="Bottom" MarginBottom="2">
-                              <Children>
-                                <HintWidget DataSource="{Hint}" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Command.HoverBegin="ExecuteBeginHint" Command.HoverEnd="ExecuteEndHint" IsEnabled="false" />
-                                <ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="ButtonBrush2" UpdateChildrenStates="true" Command.Click="ExecuteAction" IsEnabled="@IsEnabled" GamepadNavigationIndex="0">
-                                  <Children>
-                                    <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Kingdom.GeneralButtons.Text" Text="@Name" />
-                                  </Children>
-                                </ButtonWidget>
-                              </Children>
-                            </Widget>
-
-                            <ListPanel DoNotAcceptEvents="true" DoNotPassEventsToChildren="true" WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" HorizontalAlignment="Center">
-                              <Children>
-                                <TextWidget WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" HorizontalAlignment="Center" VerticalAlignment="Bottom" Brush="Kingdom.GeneralButtons.Text" IntText="@InfluenceCost" IsEnabled="@IsEnabled" />
-                                <Widget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="17" SuggestedHeight="27" HorizontalAlignment="Right" VerticalAlignment="Bottom" Sprite="SPKingdom\influence_icon_small" />
-                              </Children>
-                            </ListPanel>
-                          </Children>
-                        </ListPanel>
-                      </ItemTemplate>
-                    </ListPanel>
-					        </Children>
-				        </Widget>
-
                 <NavigationScopeTargeter ScopeID="KingdomDiplomacyChangeStatTypeScope" ScopeParent="..\StatTypes" ScopeMovements="Vertical" HasCircularMovement="false" />
                 <NavigatableListPanel Id="StatTypes" WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" HorizontalAlignment="Right" VerticalAlignment="Center" MarginRight="50" StackLayout.LayoutMethod="VerticalTopToBottom" IsVisible="@IsWar">
                   <Children>

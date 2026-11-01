@@ -504,6 +504,7 @@ namespace BannerlordPlusPlus
             if (kingdom == null || _playerKingdom == null || !kingdom.IsAtWarWith(_playerKingdom))
                 return;
 
+            SelectKingdom(kingdom);
             _selectedWarKingdom = kingdom;
             IsProposalMode = false;
             StatusMessage = string.Empty;

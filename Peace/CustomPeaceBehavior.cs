@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
+using TaleWorlds.CampaignSystem.Election;
+using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
 
@@ -10,10 +13,10 @@ namespace BannerlordPlusPlus
     public class CustomPeaceBehavior : CampaignBehaviorBase
     {
         public static CustomPeaceBehavior Instance { get; private set; }
-        public static bool IsExecutingCustomPeace = false;
 
         private List<PeaceAgreement> _activeTruces = new();
         private Dictionary<string, string> _reparationTargets = new(); // WinnerId -> LoserId
+        private List<PeaceProposalTerms> _pendingProposals = new(); // WinnerId -> LoserId
 
         public CustomPeaceBehavior()
         {
@@ -30,9 +33,11 @@ namespace BannerlordPlusPlus
         {
             dataStore.SyncData("ActiveTruces", ref _activeTruces);
             dataStore.SyncData("ReparationTargets", ref _reparationTargets);
+            dataStore.SyncData("PendingPeaceProposals", ref _pendingProposals);
 
             _activeTruces ??= new List<PeaceAgreement>();
             _reparationTargets ??= new Dictionary<string, string>();
+            _pendingProposals ??= new List<PeaceProposalTerms>();
         }
 
         public bool HasActiveTruce(Kingdom k1, Kingdom k2)
@@ -54,85 +59,220 @@ namespace BannerlordPlusPlus
             return true;
         }
 
-        public void ProcessGlobalPeaceRequest(Kingdom k1, Kingdom k2, int requestedTribute, PeaceDealOptions options = PeaceDealOptions.None)
+        public bool SubmitPeaceProposal(PeaceProposalTerms terms)
         {
-            SubjectAttributes subject = SubjectBehavior.GetSubjectBetween(k1, k2);
-            if (subject != null && subject.IsRebelling)
+            if (terms?.ProposerKingdom == null ||
+                terms.TargetKingdom == null ||
+                terms.ProposerKingdom == terms.TargetKingdom ||
+                !terms.ProposerKingdom.IsAtWarWith(terms.TargetKingdom))
             {
-                ExecuteIndependenceWarPeace(subject, k1, k2);
-                return;
+                return false;
             }
 
-            ExecuteStandardGlobalPeace(k1, k2, requestedTribute, options);
+            Clan targetRulingClan = terms.TargetKingdom.RulingClan;
+            if (targetRulingClan == null || targetRulingClan.Kingdom != terms.TargetKingdom)
+                return false;
+
+            _pendingProposals ??= new List<PeaceProposalTerms>();
+            if (_pendingProposals.Any(proposal =>
+                    proposal != null &&
+                    proposal.Involves(terms.ProposerKingdom, terms.TargetKingdom)))
+            {
+                return false;
+            }
+
+            _pendingProposals.Add(terms);
+
+            var decision = new MakePeaceKingdomDecision(
+                targetRulingClan,
+                terms.ProposerKingdom,
+                terms.DailyTributeToTarget,
+                terms.DailyTributeDurationDays,
+                applyResults: true,
+                isProposedByOpponent: true);
+
+            terms.TargetKingdom.AddDecision(decision, ignoreInfluenceCost: true);
+            return true;
         }
 
-        private void ExecuteStandardGlobalPeace(Kingdom k1, Kingdom k2, int requestedTribute, PeaceDealOptions options)
+        public PeaceProposalTerms GetPendingProposal(MakePeaceKingdomDecision decision)
         {
-            IsExecutingCustomPeace = true;
-
-            MakePeaceAction.Apply(k1, k2);
-
-            double truceDuration = options.HasFlag(PeaceDealOptions.Truce) ? 200.0 : 100.0;
-            AddTruce(k1, k2, truceDuration);
-
-            if (options.HasFlag(PeaceDealOptions.PlunderTreasury))
+            if (decision?.Kingdom == null ||
+                !(decision.FactionToMakePeaceWith is Kingdom opponent) ||
+                _pendingProposals == null)
             {
-                int loserTreasury = TreasuryBehavior.GetTreasury(k2);
-                if (loserTreasury > 0)
+                return null;
+            }
+
+            return _pendingProposals.FirstOrDefault(proposal =>
+                proposal != null &&
+                proposal.ProposerKingdom == opponent &&
+                proposal.TargetKingdom == decision.Kingdom &&
+                proposal.DailyTributeToTarget == decision.DailyTributeToBePaid &&
+                proposal.DailyTributeDurationDays == decision.DailyTributeDurationInDays);
+        }
+
+        public float EvaluatePeaceTermsForAi(
+            MakePeaceKingdomDecision decision,
+            Clan votingClan)
+        {
+            PeaceProposalTerms proposal = GetPendingProposal(decision);
+            if (proposal == null)
+                return 0f;
+
+            Kingdom recipient = proposal.TargetKingdom;
+            float supportModifier = 0f;
+
+            if (proposal.SelectedOptions.HasFlag(PeaceDealOptions.WarReparation))
+                supportModifier -= 0.12f;
+
+            if (proposal.SelectedOptions.HasFlag(PeaceDealOptions.PlunderTreasury))
+            {
+                int treasury = Math.Max(0, TreasuryBehavior.GetTreasury(recipient));
+                supportModifier -= Math.Min(0.30f, treasury / 100000f);
+            }
+
+            if (proposal.SelectedOptions.HasFlag(PeaceDealOptions.Subjectize))
+                supportModifier -= 0.40f;
+
+            if (proposal.SelectedOptions.HasFlag(PeaceDealOptions.ExecuteRuler))
+                supportModifier -= 0.60f;
+
+            Settlement cededSettlement = proposal.CededSettlement;
+            if (proposal.SelectedOptions.HasFlag(PeaceDealOptions.CededSettlement) &&
+                cededSettlement != null)
+            {
+                supportModifier -= 0.18f;
+                if (votingClan != null && cededSettlement.OwnerClan == votingClan)
+                    supportModifier -= 0.20f;
+            }
+
+            if (proposal.SelectedOptions.HasFlag(PeaceDealOptions.TerritoryExchange))
+            {
+                supportModifier -= 0.08f;
+                if (proposal.TargetSettlementToExchange != null &&
+                    votingClan != null &&
+                    proposal.TargetSettlementToExchange.OwnerClan == votingClan)
                 {
-                    TreasuryBehavior.AddToTreasury(k2, -loserTreasury);
-                    TreasuryBehavior.AddToTreasury(k1, loserTreasury);
-                    
-                    InformationManager.DisplayMessage(new InformationMessage(
-                        $"{k1.Name} completely plundered {loserTreasury:N0} denars from the treasury of {k2.Name}!", Colors.Yellow));
+                    supportModifier -= 0.15f;
                 }
             }
 
-            if (options.HasFlag(PeaceDealOptions.WarReparation))
+            if (proposal.SelectedOptions.HasFlag(PeaceDealOptions.ClaimThrone))
+                supportModifier -= 0.55f;
+
+            if (proposal.SelectedOptions.HasFlag(PeaceDealOptions.GainIndependence))
             {
-                _reparationTargets[k1.StringId] = k2.StringId;
+                SubjectAttributes subject = SubjectBehavior.GetSubjectBetween(
+                    proposal.ProposerKingdom,
+                    proposal.TargetKingdom);
+                supportModifier += subject?.JuniorKingdom == recipient ? 0.30f : -0.20f;
             }
+
+            if (proposal.SelectedOptions.HasFlag(PeaceDealOptions.Truce))
+                supportModifier += 0.03f;
+
+            return supportModifier;
+        }
+
+        public void ResolvePeaceProposal(
+            MakePeaceKingdomDecision decision,
+            bool accepted)
+        {
+            PeaceProposalTerms proposal = GetPendingProposal(decision);
+            if (proposal == null)
+                return;
+
+            _pendingProposals.Remove(proposal);
+            bool peaceWasMade = !proposal.ProposerKingdom.IsAtWarWith(proposal.TargetKingdom);
+            if (!accepted || !peaceWasMade)
+            {
+                InformationManager.DisplayMessage(new InformationMessage(
+                    $"{proposal.TargetKingdom.Name} rejected the peace proposal.",
+                    Colors.Yellow));
+                return;
+            }
+
+            ApplyAcceptedPeaceTerms(proposal);
+        }
+
+        private void ApplyAcceptedPeaceTerms(PeaceProposalTerms proposal)
+        {
+            Kingdom proposer = proposal.ProposerKingdom;
+            Kingdom target = proposal.TargetKingdom;
+            PeaceDealOptions options = proposal.SelectedOptions;
+
+            AddTruce(proposer, target, options.HasFlag(PeaceDealOptions.Truce) ? 200.0 : 100.0);
+
+            if (options.HasFlag(PeaceDealOptions.PlunderTreasury))
+            {
+                int amount = Math.Max(0, TreasuryBehavior.GetTreasury(target));
+                TreasuryBehavior.AddToTreasury(target, -amount);
+                TreasuryBehavior.AddToTreasury(proposer, amount);
+            }
+
+            if (options.HasFlag(PeaceDealOptions.WarReparation))
+                _reparationTargets[proposer.StringId] = target.StringId;
 
             if (options.HasFlag(PeaceDealOptions.Subjectize))
+                SubjectBehavior.Instance?.AddSubject(proposer, target, proposal.TargetSubjectType);
+
+            if (options.HasFlag(PeaceDealOptions.CededSettlement) &&
+                IsSettlementOwnedBy(proposal.CededSettlement, target))
             {
-                SubjectBehavior.Instance?.AddSubject(k1, k2);
+                ChangeOwnerOfSettlementAction.ApplyByBarter(
+                    proposer.Leader,
+                    proposal.CededSettlement);
             }
 
-            if (options.HasFlag(PeaceDealOptions.ExecuteRuler) && k2.Leader != null && k2.Leader.IsAlive)
+            if (options.HasFlag(PeaceDealOptions.TerritoryExchange) &&
+                IsSettlementOwnedBy(proposal.TargetSettlementToExchange, target) &&
+                IsSettlementOwnedBy(proposal.ProposerSettlementToExchange, proposer))
             {
-                KillCharacterAction.ApplyByExecution(k2.Leader, k1.Leader);
+                ChangeOwnerOfSettlementAction.ApplyByBarter(
+                    proposer.Leader,
+                    proposal.TargetSettlementToExchange);
+                ChangeOwnerOfSettlementAction.ApplyByBarter(
+                    target.Leader,
+                    proposal.ProposerSettlementToExchange);
+            }
+
+            if (options.HasFlag(PeaceDealOptions.ClaimThrone) &&
+                proposer.RulingClan != null)
+            {
+                ChangeRulingClanAction.Apply(target, proposer.RulingClan);
+            }
+
+            if (options.HasFlag(PeaceDealOptions.GainIndependence))
+            {
+                SubjectAttributes subject =
+                    SubjectBehavior.GetSubjectBetween(proposer, target);
+                if (subject != null)
+                {
+                    SubjectBehavior.Instance?.EndSubject(
+                        subject.SeniorKingdom,
+                        subject.JuniorKingdom,
+                        "Peace agreement");
+                }
+            }
+
+            if (options.HasFlag(PeaceDealOptions.ExecuteRuler) &&
+                target.Leader != null &&
+                target.Leader.IsAlive)
+            {
+                KillCharacterAction.ApplyByExecution(target.Leader, proposer.Leader);
             }
 
             InformationManager.DisplayMessage(new InformationMessage(
-                $"A diplomatic peace treaty has been established between {k1.Name} and {k2.Name} ({truceDuration} days truce).", 
-                Colors.White));
-
-            IsExecutingCustomPeace = false;
+                $"Peace accepted by {target.Name}. The agreed treaty terms have taken effect.",
+                Colors.Green));
         }
 
-        private void ExecuteIndependenceWarPeace(SubjectAttributes subject, Kingdom k1, Kingdom k2)
+        private static bool IsSettlementOwnedBy(Settlement settlement, Kingdom kingdom)
         {
-            IsExecutingCustomPeace = true;
-
-            Kingdom senior = subject.SeniorKingdom;
-            Kingdom junior = subject.JuniorKingdom;
-
-            if (junior.CurrentTotalStrength > senior.CurrentTotalStrength * 1.2f)
-            {
-                subject.IsRebelling = false;
-                SubjectBehavior.Instance?.EndSubject(senior, junior, "Won Independence War");
-                MakePeaceAction.Apply(senior, junior);
-            }
-            else
-            {
-                subject.IsRebelling = false;
-                subject.LibertyDesire = 0f;
-                MakePeaceAction.Apply(senior, junior);
-            }
-
-            AddTruce(senior, junior, 150.0);
-
-            IsExecutingCustomPeace = false;
+            return settlement != null &&
+                   kingdom != null &&
+                   settlement.OwnerClan?.Kingdom == kingdom;
         }
 
         private void OnWarDeclared(IFaction faction1, IFaction faction2, DeclareWarAction.DeclareWarDetail detail)

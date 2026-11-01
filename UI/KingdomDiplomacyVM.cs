@@ -4,8 +4,10 @@ using System.Linq;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Election;
 using TaleWorlds.CampaignSystem.ViewModelCollection.KingdomManagement;
+using TaleWorlds.CampaignSystem.ViewModelCollection.KingdomManagement.Diplomacy;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
+using TaleWorlds.CampaignSystem.Settlements;
 using NativeKingdomDiplomacyVM =
     TaleWorlds.CampaignSystem.ViewModelCollection.KingdomManagement.Diplomacy.KingdomDiplomacyVM;
 
@@ -69,6 +71,8 @@ namespace BannerlordPlusPlus
     {
         private readonly KingdomDiplomacyScreenVM _owner;
         private readonly SubjectAttributes _subject;
+        private readonly Kingdom _kingdom;
+        private readonly bool _isWarKingdom;
         private readonly string _kingdomName;
         private readonly string _detailsText;
 
@@ -82,16 +86,22 @@ namespace BannerlordPlusPlus
         public bool IsSubject => _subject != null;
 
         [DataSourceProperty]
-        public bool IsRegularItem => !IsSubject;
+        public bool IsWarKingdom => _isWarKingdom;
+
+        [DataSourceProperty]
+        public bool IsRegularItem => !IsSubject && !IsWarKingdom;
 
         public DiplomacyItemVM(
             Kingdom kingdom,
             string details,
             KingdomDiplomacyScreenVM owner = null,
-            SubjectAttributes subject = null)
+            SubjectAttributes subject = null,
+            bool isWarKingdom = false)
         {
             _owner = owner;
             _subject = subject;
+            _kingdom = kingdom;
+            _isWarKingdom = isWarKingdom;
             _kingdomName = kingdom?.Name?.ToString() ?? "Unknown Kingdom";
             _detailsText = details;
         }
@@ -100,6 +110,12 @@ namespace BannerlordPlusPlus
         {
             if (_subject != null)
                 _owner?.SelectSubject(_subject);
+        }
+
+        public void ExecuteSelectWarKingdom()
+        {
+            if (_isWarKingdom)
+                _owner?.SelectWarKingdom(_kingdom);
         }
     }
 
@@ -191,6 +207,103 @@ namespace BannerlordPlusPlus
         }
     }
 
+    public sealed class PeaceClauseVM : ViewModel
+    {
+        private readonly KingdomDiplomacyScreenVM _owner;
+        private readonly PeaceDealOptions _option;
+        private readonly string _name;
+        private readonly string _description;
+        private bool _isSelected;
+
+        [DataSourceProperty]
+        public string Name => _name;
+
+        [DataSourceProperty]
+        public string Description => _description;
+
+        public PeaceDealOptions Option => _option;
+
+        [DataSourceProperty]
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected == value)
+                    return;
+
+                _isSelected = value;
+                OnPropertyChangedWithValue(value, nameof(IsSelected));
+            }
+        }
+
+        public PeaceClauseVM(
+            KingdomDiplomacyScreenVM owner,
+            PeaceDealOptions option,
+            string name,
+            string description,
+            bool isSelected)
+        {
+            _owner = owner;
+            _option = option;
+            _name = name;
+            _description = description;
+            _isSelected = isSelected;
+        }
+
+        public void ExecuteToggle()
+        {
+            _owner.TogglePeaceClause(_option);
+        }
+    }
+
+    public sealed class PeaceSettlementVM : ViewModel
+    {
+        private readonly KingdomDiplomacyScreenVM _owner;
+        private readonly Settlement _settlement;
+        private readonly bool _isTargetSettlement;
+        private bool _isSelected;
+
+        [DataSourceProperty]
+        public string Name => _settlement.Name.ToString();
+
+        [DataSourceProperty]
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected == value)
+                    return;
+
+                _isSelected = value;
+                OnPropertyChangedWithValue(value, nameof(IsSelected));
+            }
+        }
+
+        public PeaceSettlementVM(
+            KingdomDiplomacyScreenVM owner,
+            Settlement settlement,
+            bool isTargetSettlement,
+            bool isSelected)
+        {
+            _owner = owner;
+            _settlement = settlement;
+            _isTargetSettlement = isTargetSettlement;
+            _isSelected = isSelected;
+        }
+
+        public void ExecuteSelect()
+        {
+            _owner.SelectPeaceSettlement(_settlement, _isTargetSettlement);
+        }
+
+        public bool Represents(Settlement settlement)
+        {
+            return _settlement == settlement;
+        }
+    }
+
     public sealed class KingdomDiplomacyScreenVM : NativeKingdomDiplomacyVM
     {
         private readonly Kingdom _playerKingdom;
@@ -200,10 +313,22 @@ namespace BannerlordPlusPlus
             new MBBindingList<DiplomacyProposalKindVM>();
         private readonly MBBindingList<DiplomacyTargetVM> _proposalTargets =
             new MBBindingList<DiplomacyTargetVM>();
+        private readonly MBBindingList<PeaceClauseVM> _peaceClauses =
+            new MBBindingList<PeaceClauseVM>();
+        private readonly MBBindingList<PeaceSettlementVM> _targetPeaceSettlements =
+            new MBBindingList<PeaceSettlementVM>();
+        private readonly MBBindingList<PeaceSettlementVM> _proposerPeaceSettlements =
+            new MBBindingList<PeaceSettlementVM>();
         private DiplomacyEvaluator.ProposalType _selectedProposalType =
             DiplomacyEvaluator.ProposalType.Alliance;
         private Kingdom _selectedTarget;
+        private Kingdom _selectedWarKingdom;
         private SubjectAttributes _selectedSubject;
+        private Settlement _selectedCededSettlement;
+        private Settlement _selectedTargetSettlementToExchange;
+        private Settlement _selectedProposerSettlementToExchange;
+        private int _peaceDailyTribute;
+        private int _peaceTributeDurationDays;
         private bool _isProposalMode;
         private string _statusMessage = string.Empty;
 
@@ -217,6 +342,15 @@ namespace BannerlordPlusPlus
         public MBBindingList<DiplomacyTargetVM> ProposalTargets => _proposalTargets;
 
         [DataSourceProperty]
+        public MBBindingList<PeaceClauseVM> PeaceClauses => _peaceClauses;
+
+        [DataSourceProperty]
+        public MBBindingList<PeaceSettlementVM> TargetPeaceSettlements => _targetPeaceSettlements;
+
+        [DataSourceProperty]
+        public MBBindingList<PeaceSettlementVM> ProposerPeaceSettlements => _proposerPeaceSettlements;
+
+        [DataSourceProperty]
         public bool IsProposalMode
         {
             get => _isProposalMode;
@@ -227,6 +361,10 @@ namespace BannerlordPlusPlus
 
                 _isProposalMode = value;
                 OnPropertyChangedWithValue(value, nameof(IsProposalMode));
+                OnPropertyChanged(nameof(IsTreatyListVisible));
+                OnPropertyChanged(nameof(IsPactButtonVisible));
+                OnPropertyChanged(nameof(IsPeaceProposalVisible));
+                OnPropertyChanged(nameof(IsBackButtonVisible));
             }
         }
 
@@ -249,6 +387,45 @@ namespace BannerlordPlusPlus
 
         [DataSourceProperty]
         public bool IsTreatyListVisible => !IsProposalMode;
+
+        [DataSourceProperty]
+        public bool IsPactButtonVisible =>
+            !IsProposalMode && _selectedWarKingdom == null;
+
+        [DataSourceProperty]
+        public bool IsPeaceProposalVisible =>
+            !IsProposalMode && _selectedWarKingdom != null;
+
+        [DataSourceProperty]
+        public bool IsCededSettlementSelectorVisible =>
+            IsPeaceProposalVisible && IsPeaceClauseSelected(PeaceDealOptions.CededSettlement);
+
+        [DataSourceProperty]
+        public bool IsTerritoryExchangeSelectorVisible =>
+            IsPeaceProposalVisible && IsPeaceClauseSelected(PeaceDealOptions.TerritoryExchange);
+
+        [DataSourceProperty]
+        public bool CanSubmitPeaceProposal =>
+            _selectedWarKingdom != null &&
+            (!IsPeaceClauseSelected(PeaceDealOptions.CededSettlement) ||
+             _selectedCededSettlement != null) &&
+            (!IsPeaceClauseSelected(PeaceDealOptions.TerritoryExchange) ||
+             (_selectedTargetSettlementToExchange != null &&
+              _selectedProposerSettlementToExchange != null));
+
+        [DataSourceProperty]
+        public bool IsBackButtonVisible =>
+            IsProposalMode || _selectedWarKingdom != null;
+
+        [DataSourceProperty]
+        public string SelectedWarKingdomName =>
+            _selectedWarKingdom?.Name?.ToString() ?? string.Empty;
+
+        [DataSourceProperty]
+        public int PeaceDailyTribute => _peaceDailyTribute;
+
+        [DataSourceProperty]
+        public int PeaceTributeDurationDays => _peaceTributeDurationDays;
 
         [DataSourceProperty]
         public string SelectedKingdomText =>
@@ -289,6 +466,7 @@ namespace BannerlordPlusPlus
         {
             _playerKingdom = Clan.PlayerClan?.Kingdom;
             InitializeProposalTypes();
+            InitializePeaceClauses();
             RefreshValues();
         }
 
@@ -309,8 +487,278 @@ namespace BannerlordPlusPlus
         public void ExecuteCloseProposal()
         {
             IsProposalMode = false;
+            _selectedWarKingdom = null;
             StatusMessage = string.Empty;
             RefreshValues();
+            OnPropertyChanged(nameof(IsPactButtonVisible));
+            OnPropertyChanged(nameof(IsPeaceProposalVisible));
+            OnPropertyChanged(nameof(IsBackButtonVisible));
+            OnPropertyChanged(nameof(SelectedWarKingdomName));
+            OnPropertyChanged(nameof(IsCededSettlementSelectorVisible));
+            OnPropertyChanged(nameof(IsTerritoryExchangeSelectorVisible));
+            OnPropertyChanged(nameof(CanSubmitPeaceProposal));
+        }
+
+        public void SelectWarKingdom(Kingdom kingdom)
+        {
+            if (kingdom == null || _playerKingdom == null || !kingdom.IsAtWarWith(_playerKingdom))
+                return;
+
+            _selectedWarKingdom = kingdom;
+            IsProposalMode = false;
+            StatusMessage = string.Empty;
+            OnPropertyChanged(nameof(IsPactButtonVisible));
+            OnPropertyChanged(nameof(IsPeaceProposalVisible));
+            OnPropertyChanged(nameof(IsBackButtonVisible));
+            OnPropertyChanged(nameof(SelectedWarKingdomName));
+            OnPropertyChanged(nameof(IsCededSettlementSelectorVisible));
+            OnPropertyChanged(nameof(IsTerritoryExchangeSelectorVisible));
+            OnPropertyChanged(nameof(CanSubmitPeaceProposal));
+            RefreshPeaceSettlementChoices();
+        }
+
+        public void ExecuteProposePeace()
+        {
+            Kingdom target = _selectedWarKingdom;
+            if (_playerKingdom == null ||
+                target == null ||
+                target.IsEliminated ||
+                !target.IsAtWarWith(_playerKingdom))
+            {
+                StatusMessage = "That kingdom is no longer at war with you.";
+                _selectedWarKingdom = null;
+                OnPropertyChanged(nameof(IsPactButtonVisible));
+                OnPropertyChanged(nameof(IsPeaceProposalVisible));
+                OnPropertyChanged(nameof(IsBackButtonVisible));
+                OnPropertyChanged(nameof(SelectedWarKingdomName));
+                return;
+            }
+
+            if (!CanSubmitPeaceProposal)
+            {
+                StatusMessage = "Choose the required settlement terms before submitting.";
+                return;
+            }
+
+            CustomPeaceBehavior peaceBehavior = CustomPeaceBehavior.Instance;
+            if (peaceBehavior == null)
+            {
+                StatusMessage = "The peace decision system is unavailable.";
+                return;
+            }
+
+            PeaceDealOptions selectedOptions = _peaceClauses
+                .Where(clause => clause.IsSelected)
+                .Aggregate(
+                    PeaceDealOptions.None,
+                    (options, clause) => options | clause.Option);
+
+            var terms = new PeaceProposalTerms
+            {
+                ProposerKingdom = _playerKingdom,
+                TargetKingdom = target,
+                SelectedOptions = selectedOptions,
+                DailyTributeToTarget = _peaceDailyTribute,
+                DailyTributeDurationDays = _peaceTributeDurationDays,
+                CededSettlement = _selectedCededSettlement,
+                TargetSettlementToExchange = _selectedTargetSettlementToExchange,
+                ProposerSettlementToExchange = _selectedProposerSettlementToExchange,
+                TargetSubjectType = SubjectType.Vassal
+            };
+
+            if (!peaceBehavior.SubmitPeaceProposal(terms))
+            {
+                StatusMessage = $"Could not submit the proposal to {target.Name}'s kingdom council.";
+                return;
+            }
+
+            StatusMessage =
+                $"Peace proposal submitted to {target.Name}'s council. Its lords will evaluate the terms.";
+        }
+
+        public void TogglePeaceClause(PeaceDealOptions option)
+        {
+            PeaceClauseVM clause = _peaceClauses.FirstOrDefault(item => item.Option == option);
+            if (clause == null)
+                return;
+
+            clause.IsSelected = !clause.IsSelected;
+            if (option == PeaceDealOptions.CededSettlement ||
+                option == PeaceDealOptions.TerritoryExchange)
+            {
+                OnPropertyChanged(nameof(IsCededSettlementSelectorVisible));
+                OnPropertyChanged(nameof(IsTerritoryExchangeSelectorVisible));
+            }
+
+            OnPropertyChanged(nameof(CanSubmitPeaceProposal));
+        }
+
+        public void SelectPeaceSettlement(Settlement settlement, bool isTargetSettlement)
+        {
+            if (settlement == null)
+                return;
+
+            if (isTargetSettlement)
+            {
+                _selectedCededSettlement = settlement;
+                _selectedTargetSettlementToExchange = settlement;
+                foreach (PeaceSettlementVM item in _targetPeaceSettlements)
+                    item.IsSelected = item.Represents(settlement);
+            }
+            else
+            {
+                _selectedProposerSettlementToExchange = settlement;
+                foreach (PeaceSettlementVM item in _proposerPeaceSettlements)
+                    item.IsSelected = item.Represents(settlement);
+            }
+
+            OnPropertyChanged(nameof(CanSubmitPeaceProposal));
+        }
+
+        public void ExecuteIncreasePeaceTribute()
+        {
+            if (_peaceDailyTribute == 0)
+            {
+                _peaceTributeDurationDays = 30;
+                OnPropertyChanged(nameof(PeaceTributeDurationDays));
+            }
+
+            _peaceDailyTribute = Math.Min(100000, _peaceDailyTribute + 100);
+            OnPropertyChanged(nameof(PeaceDailyTribute));
+        }
+
+        public void ExecuteDecreasePeaceTribute()
+        {
+            _peaceDailyTribute = Math.Max(0, _peaceDailyTribute - 100);
+            OnPropertyChanged(nameof(PeaceDailyTribute));
+            if (_peaceDailyTribute == 0)
+            {
+                _peaceTributeDurationDays = 0;
+                OnPropertyChanged(nameof(PeaceTributeDurationDays));
+            }
+        }
+
+        public void ExecuteIncreasePeaceTributeDuration()
+        {
+            if (_peaceDailyTribute == 0)
+                return;
+
+            _peaceTributeDurationDays = Math.Min(365, _peaceTributeDurationDays + 30);
+            OnPropertyChanged(nameof(PeaceTributeDurationDays));
+        }
+
+        public void ExecuteDecreasePeaceTributeDuration()
+        {
+            _peaceTributeDurationDays = Math.Max(0, _peaceTributeDurationDays - 30);
+            OnPropertyChanged(nameof(PeaceTributeDurationDays));
+        }
+
+        private bool IsPeaceClauseSelected(PeaceDealOptions option)
+        {
+            return _peaceClauses.Any(clause =>
+                clause.Option == option && clause.IsSelected);
+        }
+
+        private void InitializePeaceClauses()
+        {
+            _peaceClauses.Add(new PeaceClauseVM(
+                this,
+                PeaceDealOptions.WarReparation,
+                "War Reparations",
+                "The defeated kingdom pays 10% of its estimated daily income.",
+                false));
+            _peaceClauses.Add(new PeaceClauseVM(
+                this,
+                PeaceDealOptions.TerritoryExchange,
+                "Exchange Settlements",
+                "Each kingdom cedes one selected settlement to the other.",
+                false));
+            _peaceClauses.Add(new PeaceClauseVM(
+                this,
+                PeaceDealOptions.PlunderTreasury,
+                "Seize Treasury",
+                "Transfer the target kingdom's treasury to your kingdom.",
+                false));
+            _peaceClauses.Add(new PeaceClauseVM(
+                this,
+                PeaceDealOptions.Subjectize,
+                "Make Them a Subject",
+                "The target kingdom becomes your vassal.",
+                false));
+            _peaceClauses.Add(new PeaceClauseVM(
+                this,
+                PeaceDealOptions.ClaimThrone,
+                "Claim the Throne",
+                "Your ruling clan takes the target kingdom's throne.",
+                false));
+            _peaceClauses.Add(new PeaceClauseVM(
+                this,
+                PeaceDealOptions.ExecuteRuler,
+                "Execute Their Ruler",
+                "Execute the target kingdom's ruler.",
+                false));
+            _peaceClauses.Add(new PeaceClauseVM(
+                this,
+                PeaceDealOptions.CededSettlement,
+                "Demand a Settlement",
+                "The target cedes one selected settlement to your kingdom.",
+                false));
+            _peaceClauses.Add(new PeaceClauseVM(
+                this,
+                PeaceDealOptions.GainIndependence,
+                "Grant Independence",
+                "End the subject relationship between the two kingdoms.",
+                false));
+            _peaceClauses.Add(new PeaceClauseVM(
+                this,
+                PeaceDealOptions.Truce,
+                "Extended Truce",
+                "Set a 200-day truce instead of the standard 100 days.",
+                true));
+        }
+
+        private void RefreshPeaceSettlementChoices()
+        {
+            _targetPeaceSettlements.Clear();
+            _proposerPeaceSettlements.Clear();
+            _selectedCededSettlement = null;
+            _selectedTargetSettlementToExchange = null;
+            _selectedProposerSettlementToExchange = null;
+
+            if (_selectedWarKingdom != null)
+            {
+                foreach (Settlement settlement in _selectedWarKingdom.Settlements
+                             .Where(item => item != null)
+                             .OrderBy(item => item.Name.ToString()))
+                {
+                    var settlementVM = new PeaceSettlementVM(this, settlement, true, false);
+                    _targetPeaceSettlements.Add(settlementVM);
+                    if (_selectedCededSettlement == null)
+                    {
+                        _selectedCededSettlement = settlement;
+                        _selectedTargetSettlementToExchange = settlement;
+                        settlementVM.IsSelected = true;
+                    }
+                }
+            }
+
+            if (_playerKingdom != null)
+            {
+                foreach (Settlement settlement in _playerKingdom.Settlements
+                             .Where(item => item != null)
+                             .OrderBy(item => item.Name.ToString()))
+                {
+                    var settlementVM = new PeaceSettlementVM(this, settlement, false, false);
+                    _proposerPeaceSettlements.Add(settlementVM);
+                    if (_selectedProposerSettlementToExchange == null)
+                    {
+                        _selectedProposerSettlementToExchange = settlement;
+                        settlementVM.IsSelected = true;
+                    }
+                }
+            }
+
+            OnPropertyChanged(nameof(CanSubmitPeaceProposal));
         }
 
         public void SelectSubject(SubjectAttributes subject)
@@ -587,6 +1035,23 @@ namespace BannerlordPlusPlus
                 }
             }
             _categories.Add(nonAggressionPacts);
+
+            var wars = new DiplomacyCategoryVM("Wars", "You are not at war with any kingdoms.");
+            foreach (Kingdom kingdom in Kingdom.All
+                         .Where(item =>
+                             item != null &&
+                             item != _playerKingdom &&
+                             !item.IsEliminated &&
+                             item.IsAtWarWith(_playerKingdom))
+                         .OrderBy(item => item.Name.ToString()))
+            {
+                wars.Items.Add(new DiplomacyItemVM(
+                    kingdom,
+                    "At war — select to propose peace.",
+                    this,
+                    isWarKingdom: true));
+            }
+            _categories.Add(wars);
 
             var subjects = new DiplomacyCategoryVM(
                 "Subjects",

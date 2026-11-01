@@ -16,28 +16,10 @@ namespace BannerlordPlusPlus
     public sealed class DiplomacyCategoryVM : ViewModel
     {
         private readonly string _categoryTitle;
-        private readonly string _emptyMessage;
-        private bool _isExpanded = true;
 
         [DataSourceProperty]
-        public string CategoryTitle => _categoryTitle;
-
-        [DataSourceProperty]
-        public string EmptyMessage => _emptyMessage;
-
-        [DataSourceProperty]
-        public bool IsExpanded
-        {
-            get => _isExpanded;
-            set
-            {
-                if (_isExpanded == value)
-                    return;
-
-                _isExpanded = value;
-                OnPropertyChangedWithValue(value, nameof(IsExpanded));
-            }
-        }
+        public string CategoryTitle =>
+            $"{_categoryTitle} ({Items.Count + Subcategories.Sum(category => category.Items.Count)})";
 
         [DataSourceProperty]
         public MBBindingList<DiplomacyItemVM> Items { get; } = new MBBindingList<DiplomacyItemVM>();
@@ -52,18 +34,9 @@ namespace BannerlordPlusPlus
         [DataSourceProperty]
         public bool HasSubcategories => Subcategories.Count > 0;
 
-        [DataSourceProperty]
-        public bool IsEmpty => !HasItems && !HasSubcategories;
-
-        public DiplomacyCategoryVM(string title, string emptyMessage = "No active agreements.")
+        public DiplomacyCategoryVM(string title)
         {
             _categoryTitle = title;
-            _emptyMessage = emptyMessage;
-        }
-
-        public void ExecuteToggleExpand()
-        {
-            IsExpanded = !IsExpanded;
         }
     }
 
@@ -1037,7 +1010,7 @@ namespace BannerlordPlusPlus
             }
             _categories.Add(nonAggressionPacts);
 
-            var wars = new DiplomacyCategoryVM("Wars", "You are not at war with any kingdoms.");
+            var wars = new DiplomacyCategoryVM("Wars");
             foreach (Kingdom kingdom in Kingdom.All
                          .Where(item =>
                              item != null &&
@@ -1054,9 +1027,7 @@ namespace BannerlordPlusPlus
             }
             _categories.Add(wars);
 
-            var subjects = new DiplomacyCategoryVM(
-                "Subjects",
-                "No subject kingdoms.");
+            var subjects = new DiplomacyCategoryVM("Subjects");
             AddSubjectCategory(subjects, SubjectType.Vassal, "Vassals");
             AddSubjectCategory(subjects, SubjectType.March, "Marches");
             AddSubjectCategory(subjects, SubjectType.Tributary, "Tributaries");
@@ -1068,11 +1039,7 @@ namespace BannerlordPlusPlus
             SubjectType subjectType,
             string title)
         {
-            var category = new DiplomacyCategoryVM(
-                title,
-                subjectType == SubjectType.March
-                    ? "No marches."
-                    : $"No {title.ToLowerInvariant()}.");
+            var category = new DiplomacyCategoryVM(title);
 
             foreach (SubjectAttributes subject in SubjectBehavior.GetSubjectsOf(_playerKingdom)
                          .Where(item => item.Type == subjectType))

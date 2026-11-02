@@ -57,7 +57,7 @@
 
             <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent">
               <Children>
-                <ScrollablePanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" AutoHideScrollBars="true" ClipRect="DiplomacyClipRect" InnerPanel="DiplomacyClipRect\DiplomacyContent" VerticalScrollbar="..\DiplomacyScrollbar">
+                <ScrollablePanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" IsVisible="@IsDiplomacyScrollAreaVisible" AutoHideScrollBars="true" ClipRect="DiplomacyClipRect" InnerPanel="DiplomacyClipRect\DiplomacyContent" VerticalScrollbar="..\DiplomacyScrollbar">
                   <Children>
                     <Widget Id="DiplomacyClipRect" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" ClipContents="true">
                       <Children>
@@ -290,51 +290,69 @@
                           </Children>
                         </BrushListPanel>
 
-                        <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" IsVisible="@IsProposalMode" MarginLeft="12" MarginRight="12" StackLayout.LayoutMethod="VerticalTopToBottom">
-                          <Children>
-                            <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="44" Brush="Kingdom.PoliciesCollapserTitle.Text" Text="Choose an agreement" />
-                            <ListPanel DataSource="{ProposalTypes}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalTopToBottom">
-                              <ItemTemplate>
-                                <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="48" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteSelect">
-                                  <Children>
-                                    <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" StackLayout.LayoutMethod="VerticalTopToBottom">
-                                      <Children>
-                                        <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="24" Brush="Party.Text.Toggle" Text="@Name" />
-                                        <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="20" Brush="Party.Text.Toggle" Text="@Description" />
-                                      </Children>
-                                    </ListPanel>
-                                  </Children>
-                                </ButtonWidget>
-                              </ItemTemplate>
-                            </ListPanel>
-                            <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="40" Brush="Kingdom.PoliciesCollapserTitle.Text" Text="@SelectedKingdomText" />
-                            <ListPanel DataSource="{ProposalTargets}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalTopToBottom">
-                              <ItemTemplate>
-                                <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="42" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteSelect">
-                                  <Children>
-                                    <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="@KingdomName" />
-                                  </Children>
-                                </ButtonWidget>
-                              </ItemTemplate>
-                            </ListPanel>
-                            <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" Brush="Party.Text.Toggle" Text="@StatusMessage" />
-                            <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="48" Brush="Kingdom.Policy.Toggle.Tuple" IsEnabled="@CanSubmitProposal" Command.Click="ExecuteSubmitProposal">
-                              <Children>
-                                <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="Propose Agreement" />
-                              </Children>
-                            </ButtonWidget>
-                          </Children>
-                        </ListPanel>
                           </Children>
                         </ListPanel>
                       </Children>
                     </Widget>
                   </Children>
                 </ScrollablePanel>
-                <ScrollbarWidget Id="DiplomacyScrollbar" WidthSizePolicy="Fixed" HeightSizePolicy="StretchToParent" SuggestedWidth="8" HorizontalAlignment="Right" VerticalAlignment="Center" AlignmentAxis="Vertical" Handle="DiplomacyScrollbarHandle" MaxValue="100" MinValue="0">
+                <ScrollbarWidget Id="DiplomacyScrollbar" WidthSizePolicy="Fixed" HeightSizePolicy="StretchToParent" IsVisible="@IsDiplomacyScrollAreaVisible" SuggestedWidth="8" HorizontalAlignment="Right" VerticalAlignment="Center" AlignmentAxis="Vertical" Handle="DiplomacyScrollbarHandle" MaxValue="100" MinValue="0">
                   <Children>
                     <Widget WidthSizePolicy="Fixed" HeightSizePolicy="StretchToParent" SuggestedWidth="4" HorizontalAlignment="Center" Sprite="BlankWhiteSquare_9" AlphaFactor="0.2" Color="#472203FF" />
                     <ImageWidget Id="DiplomacyScrollbarHandle" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="6" SuggestedHeight="10" HorizontalAlignment="Center" Brush="Kingdom.Wars.Scrollbar.Handle" />
+                  </Children>
+                </ScrollbarWidget>
+                <ScrollablePanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" IsVisible="@IsProposalMode" AutoHideScrollBars="true" ClipRect="ProposalClipRect" InnerPanel="ProposalClipRect\ProposalContent" VerticalScrollbar="..\ProposalScrollbar">
+                  <Children>
+                    <Widget Id="ProposalClipRect" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" ClipContents="true">
+                      <Children>
+                        <ListPanel Id="ProposalContent" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalTopToBottom">
+                          <Children>
+                            <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" MarginLeft="12" MarginRight="12" StackLayout.LayoutMethod="VerticalTopToBottom">
+                              <Children>
+                                <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="44" Brush="Kingdom.PoliciesCollapserTitle.Text" Text="Choose an agreement" />
+                                <ListPanel DataSource="{ProposalTypes}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalTopToBottom">
+                                  <ItemTemplate>
+                                    <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="48" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteSelect">
+                                      <Children>
+                                        <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" StackLayout.LayoutMethod="VerticalTopToBottom">
+                                          <Children>
+                                            <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="24" Brush="Party.Text.Toggle" Text="@Name" />
+                                            <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="20" Brush="Party.Text.Toggle" Text="@Description" />
+                                          </Children>
+                                        </ListPanel>
+                                      </Children>
+                                    </ButtonWidget>
+                                  </ItemTemplate>
+                                </ListPanel>
+                                <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="40" Brush="Kingdom.PoliciesCollapserTitle.Text" Text="@SelectedKingdomText" />
+                                <ListPanel DataSource="{ProposalTargets}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalTopToBottom">
+                                  <ItemTemplate>
+                                    <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="42" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteSelect">
+                                      <Children>
+                                        <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="@KingdomName" />
+                                      </Children>
+                                    </ButtonWidget>
+                                  </ItemTemplate>
+                                </ListPanel>
+                                <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" Brush="Party.Text.Toggle" Text="@StatusMessage" />
+                                <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="48" Brush="Kingdom.Policy.Toggle.Tuple" IsEnabled="@CanSubmitProposal" Command.Click="ExecuteSubmitProposal">
+                                  <Children>
+                                    <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="Propose Agreement" />
+                                  </Children>
+                                </ButtonWidget>
+                              </Children>
+                            </ListPanel>
+                          </Children>
+                        </ListPanel>
+                      </Children>
+                    </Widget>
+                  </Children>
+                </ScrollablePanel>
+                <ScrollbarWidget Id="ProposalScrollbar" WidthSizePolicy="Fixed" HeightSizePolicy="StretchToParent" IsVisible="@IsProposalMode" SuggestedWidth="8" HorizontalAlignment="Right" VerticalAlignment="Center" AlignmentAxis="Vertical" Handle="ProposalScrollbarHandle" MaxValue="100" MinValue="0">
+                  <Children>
+                    <Widget WidthSizePolicy="Fixed" HeightSizePolicy="StretchToParent" SuggestedWidth="4" HorizontalAlignment="Center" Sprite="BlankWhiteSquare_9" AlphaFactor="0.2" Color="#472203FF" />
+                    <ImageWidget Id="ProposalScrollbarHandle" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="6" SuggestedHeight="10" HorizontalAlignment="Center" Brush="Kingdom.Wars.Scrollbar.Handle" />
                   </Children>
                 </ScrollbarWidget>
               </Children>

@@ -7,7 +7,6 @@ using TaleWorlds.CampaignSystem.Election;
 using TaleWorlds.CampaignSystem.ViewModelCollection.KingdomManagement;
 using TaleWorlds.CampaignSystem.ViewModelCollection.KingdomManagement.Diplomacy;
 using TaleWorlds.Core;
-using TaleWorlds.Core.ImageIdentifiers;
 using TaleWorlds.Library;
 using TaleWorlds.CampaignSystem.Settlements;
 using NativeKingdomDiplomacyVM =
@@ -337,6 +336,7 @@ namespace BannerlordPlusPlus
 
                 _isProposalMode = value;
                 OnPropertyChangedWithValue(value, nameof(IsProposalMode));
+                OnPropertyChanged(nameof(IsDiplomacyScrollAreaVisible));
                 OnPropertyChanged(nameof(IsTreatyListVisible));
                 OnPropertyChanged(nameof(IsPactButtonVisible));
                 OnPropertyChanged(nameof(IsPeaceProposalButtonVisible));
@@ -383,6 +383,9 @@ namespace BannerlordPlusPlus
 
         [DataSourceProperty]
         public bool IsTreatyListVisible => !IsProposalMode && !IsPeaceProposalMode;
+
+        [DataSourceProperty]
+        public bool IsDiplomacyScrollAreaVisible => !IsProposalMode;
 
         [DataSourceProperty]
         public bool IsPactButtonVisible =>
@@ -483,7 +486,6 @@ namespace BannerlordPlusPlus
             _selectedTarget = null;
             IsProposalMode = true;
             RefreshProposalTargets();
-            ShowKingdomSelectionInquiry();
         }
 
         public void ExecuteCloseProposal()
@@ -1003,113 +1005,6 @@ namespace BannerlordPlusPlus
                    SubjectBehavior.CanCreateDiplomaticPact(_playerKingdom, kingdom);
         }
 
-        private void ShowKingdomSelectionInquiry()
-        {
-            var kingdoms = Kingdom.All
-                .Where(CanOpenPactNegotiation)
-                .OrderBy(kingdom => kingdom.Name.ToString())
-                .ToList();
-
-            if (kingdoms.Count == 0)
-            {
-                ShowProposalResult(
-                    "No kingdoms available",
-                    "There are no kingdoms available for pact negotiations right now.");
-                return;
-            }
-
-            var elements = kingdoms
-                .Select(kingdom =>
-                {
-                    ImageIdentifier banner = kingdom.Banner == null
-                        ? null
-                        : new BannerImageIdentifier(kingdom.Banner, false);
-                    return new InquiryElement(
-                        kingdom,
-                        kingdom.Name.ToString(),
-                        banner,
-                        true,
-                        "Select this kingdom for negotiations.");
-                })
-                .ToList();
-
-            MBInformationManager.ShowMultiSelectionInquiry(
-                new MultiSelectionInquiryData(
-                    "Choose a Kingdom",
-                    "Select a kingdom to negotiate with.",
-                    elements,
-                    true,
-                    1,
-                    1,
-                    "Choose",
-                    "Cancel",
-                    selected =>
-                    {
-                        if (selected == null ||
-                            selected.Count != 1 ||
-                            !(selected[0].Identifier is Kingdom target))
-                        {
-                            return;
-                        }
-
-                        ShowProposalTypeInquiry(target);
-                    },
-                    null,
-                    string.Empty,
-                    false),
-                true,
-                true);
-        }
-
-        private void ShowProposalTypeInquiry(Kingdom target)
-        {
-            var elements = _proposalTypes
-                .Select(proposal => new InquiryElement(
-                    proposal.ProposalType,
-                    proposal.Name,
-                    null,
-                    true,
-                    proposal.Description))
-                .ToList();
-
-            MBInformationManager.ShowMultiSelectionInquiry(
-                new MultiSelectionInquiryData(
-                    $"Choose an Agreement for {target.Name}",
-                    "Select the agreement to propose.",
-                    elements,
-                    true,
-                    1,
-                    1,
-                    "Propose",
-                    "Cancel",
-                    selected =>
-                    {
-                        if (selected == null ||
-                            selected.Count != 1 ||
-                            !(selected[0].Identifier is DiplomacyEvaluator.ProposalType proposalType))
-                        {
-                            return;
-                        }
-
-                        SelectProposalType(proposalType);
-                        if (!IsEligibleTarget(target))
-                        {
-                            ShowProposalResult(
-                                "Proposal unavailable",
-                                $"{target.Name} is no longer available for this agreement.");
-                            return;
-                        }
-
-                        SelectTarget(target);
-                        ExecuteSubmitProposal();
-                    },
-                    null,
-                    string.Empty,
-                    false),
-                true,
-                true);
-        }
-
         private static void ShowProposalResult(string title, string message)
         {
             InformationManager.ShowInquiry(new InquiryData(
@@ -1120,7 +1015,7 @@ namespace BannerlordPlusPlus
                 "OK",
                 string.Empty,
                 null,
-                null));
+                null), true, true);
         }
 
         private void RefreshTreatyCategories()

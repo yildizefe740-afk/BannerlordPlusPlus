@@ -305,6 +305,7 @@ namespace BannerlordPlusPlus
         private int _peaceDailyTribute;
         private int _peaceTributeDurationDays;
         private bool _isProposalMode;
+        private bool _isPeaceProposalMode;
         private string _statusMessage = string.Empty;
 
         [DataSourceProperty]
@@ -338,6 +339,26 @@ namespace BannerlordPlusPlus
                 OnPropertyChangedWithValue(value, nameof(IsProposalMode));
                 OnPropertyChanged(nameof(IsTreatyListVisible));
                 OnPropertyChanged(nameof(IsPactButtonVisible));
+                OnPropertyChanged(nameof(IsPeaceProposalButtonVisible));
+                OnPropertyChanged(nameof(IsPeaceProposalVisible));
+                OnPropertyChanged(nameof(IsBackButtonVisible));
+            }
+        }
+
+        [DataSourceProperty]
+        public bool IsPeaceProposalMode
+        {
+            get => _isPeaceProposalMode;
+            private set
+            {
+                if (_isPeaceProposalMode == value)
+                    return;
+
+                _isPeaceProposalMode = value;
+                OnPropertyChangedWithValue(value, nameof(IsPeaceProposalMode));
+                OnPropertyChanged(nameof(IsTreatyListVisible));
+                OnPropertyChanged(nameof(IsPactButtonVisible));
+                OnPropertyChanged(nameof(IsPeaceProposalButtonVisible));
                 OnPropertyChanged(nameof(IsPeaceProposalVisible));
                 OnPropertyChanged(nameof(IsBackButtonVisible));
             }
@@ -361,15 +382,19 @@ namespace BannerlordPlusPlus
         public bool CanSubmitProposal => _selectedTarget != null;
 
         [DataSourceProperty]
-        public bool IsTreatyListVisible => !IsProposalMode;
+        public bool IsTreatyListVisible => !IsProposalMode && !IsPeaceProposalMode;
 
         [DataSourceProperty]
         public bool IsPactButtonVisible =>
-            !IsProposalMode && _selectedWarKingdom == null;
+            !IsProposalMode && !IsPeaceProposalMode && _selectedWarKingdom == null;
+
+        [DataSourceProperty]
+        public bool IsPeaceProposalButtonVisible =>
+            !IsProposalMode && !IsPeaceProposalMode && _selectedWarKingdom != null;
 
         [DataSourceProperty]
         public bool IsPeaceProposalVisible =>
-            !IsProposalMode && _selectedWarKingdom != null;
+            IsPeaceProposalMode && _selectedWarKingdom != null;
 
         [DataSourceProperty]
         public bool IsCededSettlementSelectorVisible =>
@@ -390,7 +415,7 @@ namespace BannerlordPlusPlus
 
         [DataSourceProperty]
         public bool IsBackButtonVisible =>
-            IsProposalMode || _selectedWarKingdom != null;
+            IsProposalMode || IsPeaceProposalMode;
 
         [DataSourceProperty]
         public string SelectedWarKingdomName =>
@@ -456,16 +481,20 @@ namespace BannerlordPlusPlus
         {
             StatusMessage = string.Empty;
             _selectedTarget = null;
+            IsProposalMode = true;
+            RefreshProposalTargets();
             ShowKingdomSelectionInquiry();
         }
 
         public void ExecuteCloseProposal()
         {
             IsProposalMode = false;
+            IsPeaceProposalMode = false;
             _selectedWarKingdom = null;
             StatusMessage = string.Empty;
             RefreshValues();
             OnPropertyChanged(nameof(IsPactButtonVisible));
+            OnPropertyChanged(nameof(IsPeaceProposalButtonVisible));
             OnPropertyChanged(nameof(IsPeaceProposalVisible));
             OnPropertyChanged(nameof(IsBackButtonVisible));
             OnPropertyChanged(nameof(SelectedWarKingdomName));
@@ -482,14 +511,38 @@ namespace BannerlordPlusPlus
             SelectKingdom(kingdom);
             _selectedWarKingdom = kingdom;
             IsProposalMode = false;
+            IsPeaceProposalMode = false;
             StatusMessage = string.Empty;
             OnPropertyChanged(nameof(IsPactButtonVisible));
+            OnPropertyChanged(nameof(IsPeaceProposalButtonVisible));
             OnPropertyChanged(nameof(IsPeaceProposalVisible));
             OnPropertyChanged(nameof(IsBackButtonVisible));
             OnPropertyChanged(nameof(SelectedWarKingdomName));
             OnPropertyChanged(nameof(IsCededSettlementSelectorVisible));
             OnPropertyChanged(nameof(IsTerritoryExchangeSelectorVisible));
             OnPropertyChanged(nameof(CanSubmitPeaceProposal));
+            RefreshPeaceSettlementChoices();
+        }
+
+        public void ExecuteOpenPeaceProposal()
+        {
+            Kingdom target = _selectedWarKingdom;
+            if (_playerKingdom == null ||
+                target == null ||
+                target.IsEliminated ||
+                !target.IsAtWarWith(_playerKingdom))
+            {
+                StatusMessage = "Select a kingdom that is currently at war with you.";
+                _selectedWarKingdom = null;
+                OnPropertyChanged(nameof(IsPeaceProposalButtonVisible));
+                OnPropertyChanged(nameof(IsPactButtonVisible));
+                OnPropertyChanged(nameof(SelectedWarKingdomName));
+                return;
+            }
+
+            StatusMessage = string.Empty;
+            IsProposalMode = false;
+            IsPeaceProposalMode = true;
             RefreshPeaceSettlementChoices();
         }
 
@@ -503,7 +556,9 @@ namespace BannerlordPlusPlus
             {
                 StatusMessage = "That kingdom is no longer at war with you.";
                 _selectedWarKingdom = null;
+                IsPeaceProposalMode = false;
                 OnPropertyChanged(nameof(IsPactButtonVisible));
+                OnPropertyChanged(nameof(IsPeaceProposalButtonVisible));
                 OnPropertyChanged(nameof(IsPeaceProposalVisible));
                 OnPropertyChanged(nameof(IsBackButtonVisible));
                 OnPropertyChanged(nameof(SelectedWarKingdomName));
@@ -1003,7 +1058,7 @@ namespace BannerlordPlusPlus
                     string.Empty,
                     false),
                 true,
-                false);
+                true);
         }
 
         private void ShowProposalTypeInquiry(Kingdom target)
@@ -1052,7 +1107,7 @@ namespace BannerlordPlusPlus
                     string.Empty,
                     false),
                 true,
-                false);
+                true);
         }
 
         private static void ShowProposalResult(string title, string message)
@@ -1153,7 +1208,7 @@ namespace BannerlordPlusPlus
             {
                 wars.Items.Add(new DiplomacyItemVM(
                     kingdom,
-                    "At war — select to propose peace.",
+                    "At war — select, then propose peace.",
                     this,
                     isWarKingdom: true));
             }

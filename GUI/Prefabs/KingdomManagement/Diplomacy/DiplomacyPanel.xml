@@ -42,6 +42,11 @@
                     <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="Propose Pact" />
                   </Children>
                 </ButtonWidget>
+                <ButtonWidget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="160" SuggestedHeight="42" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsPeaceProposalButtonVisible" Command.Click="ExecuteOpenPeaceProposal">
+                  <Children>
+                    <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="Propose Peace" />
+                  </Children>
+                </ButtonWidget>
                 <ButtonWidget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="160" SuggestedHeight="42" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsBackButtonVisible" Command.Click="ExecuteCloseProposal">
                   <Children>
                     <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="Back" />

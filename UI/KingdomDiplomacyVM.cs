@@ -919,22 +919,22 @@ namespace BannerlordPlusPlus
                 this,
                 DiplomacyEvaluator.ProposalType.Alliance,
                 "Military Alliance",
-                "Mutual military support and shared trust."));
+                string.Empty));
             _proposalTypes.Add(new DiplomacyProposalKindVM(
                 this,
                 DiplomacyEvaluator.ProposalType.TradeAgreement,
                 "Trade Agreement",
-                "A 20% trade discount for 60 days."));
+                "For 60 days"));
             _proposalTypes.Add(new DiplomacyProposalKindVM(
                 this,
                 DiplomacyEvaluator.ProposalType.DefensivePact,
                 "Defensive Pact",
-                "Join each other's defensive wars for 60 days."));
+                "For 60 days"));
             _proposalTypes.Add(new DiplomacyProposalKindVM(
                 this,
                 DiplomacyEvaluator.ProposalType.NonAggressionPact,
                 "Non-Aggression Pact",
-                "Neither kingdom may declare war for 60 days."));
+                "For 60 days"));
             SelectProposalType(_selectedProposalType);
         }
 

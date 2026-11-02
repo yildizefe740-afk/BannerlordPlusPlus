@@ -37,17 +37,17 @@
             <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="56" StackLayout.LayoutMethod="HorizontalLeftToRight">
               <Children>
                 <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Kingdom.PoliciesCollapserTitle.Text" Text="Diplomacy" />
-                <ButtonWidget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="160" SuggestedHeight="42" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsPactButtonVisible" Command.Click="ExecuteOpenProposal">
+                <ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="160" SuggestedHeight="42" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsPactButtonVisible" Command.Click="ExecuteOpenProposal">
                   <Children>
                     <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="Propose Pact" />
                   </Children>
                 </ButtonWidget>
-                <ButtonWidget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="160" SuggestedHeight="42" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsPeaceProposalButtonVisible" Command.Click="ExecuteOpenPeaceProposal">
+                <ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="160" SuggestedHeight="42" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsPeaceProposalButtonVisible" Command.Click="ExecuteOpenPeaceProposal">
                   <Children>
                     <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="Propose Peace" />
                   </Children>
                 </ButtonWidget>
-                <ButtonWidget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="160" SuggestedHeight="42" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsBackButtonVisible" Command.Click="ExecuteCloseProposal">
+                <ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="160" SuggestedHeight="42" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsBackButtonVisible" Command.Click="ExecuteCloseProposal">
                   <Children>
                     <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="Back" />
                   </Children>
@@ -85,7 +85,7 @@
                                       <ItemTemplate>
                                         <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="42">
                                           <Children>
-                                            <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsWarKingdom" Command.Click="ExecuteSelectWarKingdom">
+                                            <ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsWarKingdom" Command.Click="ExecuteSelectWarKingdom">
                                               <Children>
                                                 <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" StackLayout.LayoutMethod="HorizontalLeftToRight">
                                                   <Children>
@@ -95,7 +95,7 @@
                                                 </ListPanel>
                                               </Children>
                                             </ButtonWidget>
-                                            <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsSubject" Command.Click="ExecuteSelectSubject">
+                                            <ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsSubject" Command.Click="ExecuteSelectSubject">
                                               <Children>
                                                 <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" StackLayout.LayoutMethod="HorizontalLeftToRight">
                                                   <Children>
@@ -137,7 +137,7 @@
                                                   <ItemTemplate>
                                                     <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="42" StackLayout.LayoutMethod="HorizontalLeftToRight">
                                                       <Children>
-                                                        <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsWarKingdom" Command.Click="ExecuteSelectWarKingdom">
+                                                        <ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsWarKingdom" Command.Click="ExecuteSelectWarKingdom">
                                                           <Children>
                                                             <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" StackLayout.LayoutMethod="HorizontalLeftToRight">
                                                               <Children>
@@ -147,7 +147,7 @@
                                                             </ListPanel>
                                                           </Children>
                                                         </ButtonWidget>
-                                                        <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsSubject" Command.Click="ExecuteSelectSubject">
+                                                        <ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Kingdom.Policy.Toggle.Tuple" IsVisible="@IsSubject" Command.Click="ExecuteSelectSubject">
                                                           <Children>
                                                             <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" StackLayout.LayoutMethod="HorizontalLeftToRight">
                                                               <Children>
@@ -199,13 +199,13 @@
                             <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="34" Brush="Party.Text.Toggle" Text="Daily tribute offered by your kingdom (gold/day)" />
                             <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="44" StackLayout.LayoutMethod="HorizontalLeftToRight">
                               <Children>
-                                <ButtonWidget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="55" SuggestedHeight="40" Brush="Kingdom.Policy.Toggle.Tuple" Command.Click="ExecuteDecreasePeaceTribute">
+                                <ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="55" SuggestedHeight="40" Brush="Kingdom.Policy.Toggle.Tuple" Command.Click="ExecuteDecreasePeaceTribute">
                                   <Children>
                                     <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="-" />
                                   </Children>
                                 </ButtonWidget>
                                 <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Kingdom.PoliciesCollapserTitle.Text" IntText="@PeaceDailyTribute" />
-                                <ButtonWidget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="55" SuggestedHeight="40" Brush="Kingdom.Policy.Toggle.Tuple" Command.Click="ExecuteIncreasePeaceTribute">
+                                <ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="55" SuggestedHeight="40" Brush="Kingdom.Policy.Toggle.Tuple" Command.Click="ExecuteIncreasePeaceTribute">
                                   <Children>
                                     <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="+" />
                                   </Children>
@@ -215,7 +215,7 @@
                             <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="36" Brush="Kingdom.PoliciesCollapserTitle.Text" Text="Treaty clauses" />
                             <ListPanel DataSource="{PeaceClauses}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalTopToBottom">
                               <ItemTemplate>
-                                <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="52" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteToggle">
+                                <ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true" WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="52" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteToggle">
                                   <Children>
                                     <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" StackLayout.LayoutMethod="VerticalTopToBottom">
                                       <Children>
@@ -232,7 +232,7 @@
                                 <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="34" Brush="Party.Text.Toggle" Text="Select the settlement to cede" />
                                 <ListPanel DataSource="{TargetPeaceSettlements}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalTopToBottom">
                                   <ItemTemplate>
-                                    <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="40" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteSelect">
+                                    <ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true" WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="40" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteSelect">
                                       <Children>
                                         <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="@Name" />
                                       </Children>
@@ -246,7 +246,7 @@
                                 <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="34" Brush="Party.Text.Toggle" Text="Settlement your kingdom cedes" />
                                 <ListPanel DataSource="{ProposerPeaceSettlements}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalTopToBottom">
                                   <ItemTemplate>
-                                    <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="40" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteSelect">
+                                    <ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true" WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="40" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteSelect">
                                       <Children>
                                         <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="@Name" />
                                       </Children>
@@ -256,7 +256,7 @@
                                 <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="34" Brush="Party.Text.Toggle" Text="Settlement the other kingdom cedes" />
                                 <ListPanel DataSource="{TargetPeaceSettlements}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalTopToBottom">
                                   <ItemTemplate>
-                                    <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="40" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteSelect">
+                                    <ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true" WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="40" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteSelect">
                                       <Children>
                                         <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="@Name" />
                                       </Children>
@@ -268,13 +268,13 @@
                             <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="34" Brush="Party.Text.Toggle" Text="Payment duration (days)" />
                             <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="44" StackLayout.LayoutMethod="HorizontalLeftToRight">
                               <Children>
-                                <ButtonWidget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="55" SuggestedHeight="40" Brush="Kingdom.Policy.Toggle.Tuple" Command.Click="ExecuteDecreasePeaceTributeDuration">
+                                <ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="55" SuggestedHeight="40" Brush="Kingdom.Policy.Toggle.Tuple" Command.Click="ExecuteDecreasePeaceTributeDuration">
                                   <Children>
                                     <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="-" />
                                   </Children>
                                 </ButtonWidget>
                                 <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Kingdom.PoliciesCollapserTitle.Text" IntText="@PeaceTributeDurationDays" />
-                                <ButtonWidget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="55" SuggestedHeight="40" Brush="Kingdom.Policy.Toggle.Tuple" Command.Click="ExecuteIncreasePeaceTributeDuration">
+                                <ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="55" SuggestedHeight="40" Brush="Kingdom.Policy.Toggle.Tuple" Command.Click="ExecuteIncreasePeaceTributeDuration">
                                   <Children>
                                     <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="+" />
                                   </Children>
@@ -282,7 +282,7 @@
                               </Children>
                             </ListPanel>
                             <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" Brush="Party.Text.Toggle" Text="@StatusMessage" />
-                            <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="48" Brush="Kingdom.Policy.Toggle.Tuple" IsEnabled="@CanSubmitPeaceProposal" Command.Click="ExecuteProposePeace">
+                            <ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="48" Brush="Kingdom.Policy.Toggle.Tuple" IsEnabled="@CanSubmitPeaceProposal" Command.Click="ExecuteProposePeace">
                               <Children>
                                 <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="Submit Peace Proposal" />
                               </Children>
@@ -313,7 +313,7 @@
                                 <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="44" Brush="Kingdom.PoliciesCollapserTitle.Text" Text="Choose an agreement" />
                                 <ListPanel DataSource="{ProposalTypes}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalTopToBottom">
                                   <ItemTemplate>
-                                    <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="48" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteSelect">
+                                    <ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true" WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="48" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteSelect">
                                       <Children>
                                         <ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" StackLayout.LayoutMethod="VerticalTopToBottom">
                                           <Children>
@@ -328,15 +328,14 @@
                                 <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="40" Brush="Kingdom.PoliciesCollapserTitle.Text" Text="@SelectedKingdomText" />
                                 <ListPanel DataSource="{ProposalTargets}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalTopToBottom">
                                   <ItemTemplate>
-                                    <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="42" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteSelect">
+                                    <ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true" WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="42" Brush="Kingdom.Policy.Toggle.Tuple" IsSelected="@IsSelected" Command.Click="ExecuteSelect">
                                       <Children>
                                         <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="@KingdomName" />
                                       </Children>
                                     </ButtonWidget>
                                   </ItemTemplate>
                                 </ListPanel>
-                                <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" Brush="Party.Text.Toggle" Text="@StatusMessage" />
-                                <ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="48" Brush="Kingdom.Policy.Toggle.Tuple" IsEnabled="@CanSubmitProposal" Command.Click="ExecuteSubmitProposal">
+                                <ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="48" Brush="Standard.DialogCloseButtons.DoneButton" IsEnabled="@CanSubmitProposal" Command.Click="ExecuteSubmitProposal">
                                   <Children>
                                     <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Party.Text.Toggle" Text="Propose Agreement" />
                                   </Children>
@@ -684,6 +683,37 @@
                 </ListPanel>
 
                 <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" VerticalAlignment="Center" MarginLeft="25" MarginRight="25" Brush.FontSize="40" IsHidden="@IsAcceptableItemSelected" Text="@NoItemSelectedText" />
+
+                <Widget WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" HorizontalAlignment="Center" VerticalAlignment="Bottom" MarginBottom="20" IsVisible="false">
+                  <Children>
+                    <ListPanel DataSource="{Actions}" WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren">
+                      <ItemTemplate>
+                        <ListPanel WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalTopToBottom" MarginLeft="5" MarginRight="5" VerticalAlignment="Bottom">
+                          <Children>
+                            <TextWidget WidthSizePolicy="Fixed" SuggestedWidth="330" HeightSizePolicy="CoverChildren" Brush="Kingdom.ParagraphSmall.Text" MarginBottom="10" Text="@Explanation" IsEnabled="@IsEnabled" DoNotAcceptEvents="true" />
+                            <NavigationScopeTargeter ScopeID="KingdomDiplomacyActionScope" ScopeParent="..\KingdomDiplomacyAction" ScopeMovements="Horizontal" ExtendDiscoveryAreaLeft="100" ExtendDiscoveryAreaRight="100" DiscoveryAreaOffsetY="-35" />
+                            <Widget Id="KingdomDiplomacyAction" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="227" SuggestedHeight="30" HorizontalAlignment="Center" VerticalAlignment="Bottom" MarginBottom="2">
+                              <Children>
+                                <HintWidget DataSource="{Hint}" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Command.HoverBegin="ExecuteBeginHint" Command.HoverEnd="ExecuteEndHint" IsEnabled="false" />
+                                <ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="ButtonBrush2" Command.Click="ExecuteAction" IsEnabled="@IsEnabled" IsVisible="false" GamepadNavigationIndex="0">
+                                  <Children>
+                                    <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Kingdom.GeneralButtons.Text" Text="@Name" />
+                                  </Children>
+                                </ButtonWidget>
+                              </Children>
+                            </Widget>
+                            <ListPanel DoNotAcceptEvents="true" DoNotPassEventsToChildren="true" WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" HorizontalAlignment="Center">
+                              <Children>
+                                <TextWidget WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" HorizontalAlignment="Center" VerticalAlignment="Bottom" Brush="Kingdom.GeneralButtons.Text" IntText="@InfluenceCost" IsEnabled="@IsEnabled" />
+                                <Widget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="17" SuggestedHeight="27" HorizontalAlignment="Right" VerticalAlignment="Bottom" Sprite="SPKingdom\influence_icon_small" />
+                              </Children>
+                            </ListPanel>
+                          </Children>
+                        </ListPanel>
+                      </ItemTemplate>
+                    </ListPanel>
+                  </Children>
+                </Widget>
 
                 <NavigationScopeTargeter ScopeID="KingdomDiplomacyChangeStatTypeScope" ScopeParent="..\StatTypes" ScopeMovements="Vertical" HasCircularMovement="false" />
                 <NavigatableListPanel Id="StatTypes" WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" HorizontalAlignment="Right" VerticalAlignment="Center" MarginRight="50" StackLayout.LayoutMethod="VerticalTopToBottom" IsVisible="@IsWar">

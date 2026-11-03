@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
 using TaleWorlds.CampaignSystem.Election;
@@ -12,6 +13,16 @@ namespace BannerlordPlusPlus
 {
     public class CustomPeaceBehavior : CampaignBehaviorBase
     {
+        private const float PendingProposalExpirationDays = 14f;
+
+        private static readonly MethodInfo GetAiChoiceMethod =
+            typeof(KingdomElection).GetMethod(
+                "GetAiChoice",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new MissingMethodException(
+                typeof(KingdomElection).FullName,
+                "GetAiChoice");
+
         public static CustomPeaceBehavior Instance { get; private set; }
 
         private List<PeaceAgreement> _activeTruces = new();
@@ -26,6 +37,7 @@ namespace BannerlordPlusPlus
         public override void RegisterEvents()
         {
             CampaignEvents.WarDeclared.AddNonSerializedListener(this, OnWarDeclared);
+            CampaignEvents.MakePeace.AddNonSerializedListener(this, OnMakePeace);
             CampaignEvents.DailyTickEvent.AddNonSerializedListener(this, OnDailyTick);
         }
 
@@ -81,17 +93,9 @@ namespace BannerlordPlusPlus
                 return false;
             }
 
+            terms.SubmittedAtDays = (float)CampaignTime.Now.ToDays;
+            terms.LastResolutionAttemptDays = terms.SubmittedAtDays;
             _pendingProposals.Add(terms);
-
-            var decision = new MakePeaceKingdomDecision(
-                targetRulingClan,
-                terms.ProposerKingdom,
-                terms.DailyTributeToTarget,
-                terms.DailyTributeDurationDays,
-                applyResults: true,
-                isProposedByOpponent: true);
-
-            terms.TargetKingdom.AddDecision(decision, ignoreInfluenceCost: true);
             return true;
         }
 
@@ -107,9 +111,7 @@ namespace BannerlordPlusPlus
             return _pendingProposals.FirstOrDefault(proposal =>
                 proposal != null &&
                 proposal.ProposerKingdom == opponent &&
-                proposal.TargetKingdom == decision.Kingdom &&
-                proposal.DailyTributeToTarget == decision.DailyTributeToBePaid &&
-                proposal.DailyTributeDurationDays == decision.DailyTributeDurationInDays);
+                proposal.TargetKingdom == decision.Kingdom);
         }
 
         public float EvaluatePeaceTermsForAi(
@@ -120,7 +122,6 @@ namespace BannerlordPlusPlus
             if (proposal == null)
                 return 0f;
 
-            Kingdom recipient = proposal.TargetKingdom;
             float supportModifier = 0f;
 
             if (proposal.SelectedOptions.HasFlag(PeaceDealOptions.WarReparation))
@@ -128,7 +129,9 @@ namespace BannerlordPlusPlus
 
             if (proposal.SelectedOptions.HasFlag(PeaceDealOptions.PlunderTreasury))
             {
-                int treasury = Math.Max(0, TreasuryBehavior.GetTreasury(recipient));
+                Kingdom treasurySource =
+                    proposal.IsOffer ? proposal.ProposerKingdom : proposal.TargetKingdom;
+                int treasury = Math.Max(0, TreasuryBehavior.GetTreasury(treasurySource));
                 supportModifier -= Math.Min(0.30f, treasury / 100000f);
             }
 
@@ -166,13 +169,23 @@ namespace BannerlordPlusPlus
                 SubjectAttributes subject = SubjectBehavior.GetSubjectBetween(
                     proposal.ProposerKingdom,
                     proposal.TargetKingdom);
-                supportModifier += subject?.JuniorKingdom == recipient ? 0.30f : -0.20f;
+                supportModifier += subject?.JuniorKingdom == proposal.TargetKingdom
+                    ? 0.30f
+                    : -0.20f;
             }
 
             if (proposal.SelectedOptions.HasFlag(PeaceDealOptions.Truce))
                 supportModifier += 0.03f;
 
+            if (proposal.IsOffer)
+                supportModifier = -supportModifier;
+
             return supportModifier;
+        }
+
+        public bool HasPendingProposal(MakePeaceKingdomDecision decision)
+        {
+            return GetPendingProposal(decision) != null;
         }
 
         public void ResolvePeaceProposal(
@@ -201,46 +214,67 @@ namespace BannerlordPlusPlus
             Kingdom proposer = proposal.ProposerKingdom;
             Kingdom target = proposal.TargetKingdom;
             PeaceDealOptions options = proposal.SelectedOptions;
+            bool isOffer = proposal.IsOffer;
 
             AddTruce(proposer, target, options.HasFlag(PeaceDealOptions.Truce) ? 200.0 : 100.0);
 
             if (options.HasFlag(PeaceDealOptions.PlunderTreasury))
             {
-                int amount = Math.Max(0, TreasuryBehavior.GetTreasury(target));
-                TreasuryBehavior.AddToTreasury(target, -amount);
-                TreasuryBehavior.AddToTreasury(proposer, amount);
+                Kingdom source = isOffer ? proposer : target;
+                Kingdom recipient = isOffer ? target : proposer;
+                int amount = Math.Max(0, TreasuryBehavior.GetTreasury(source));
+                TreasuryBehavior.AddToTreasury(source, -amount);
+                TreasuryBehavior.AddToTreasury(recipient, amount);
             }
 
             if (options.HasFlag(PeaceDealOptions.WarReparation))
-                _reparationTargets[proposer.StringId] = target.StringId;
+            {
+                Kingdom reparationsRecipient = isOffer ? target : proposer;
+                Kingdom reparationsPayer = isOffer ? proposer : target;
+                _reparationTargets[reparationsRecipient.StringId] = reparationsPayer.StringId;
+            }
 
             if (options.HasFlag(PeaceDealOptions.Subjectize))
-                SubjectBehavior.Instance?.AddSubject(proposer, target, proposal.TargetSubjectType);
+            {
+                Kingdom senior = isOffer ? target : proposer;
+                Kingdom junior = isOffer ? proposer : target;
+                SubjectBehavior.Instance?.AddSubject(senior, junior, proposal.TargetSubjectType);
+            }
 
+            Kingdom settlementSource = isOffer ? proposer : target;
+            Kingdom settlementRecipient = isOffer ? target : proposer;
             if (options.HasFlag(PeaceDealOptions.CededSettlement) &&
-                IsSettlementOwnedBy(proposal.CededSettlement, target))
+                IsSettlementOwnedBy(proposal.CededSettlement, settlementSource))
             {
                 ChangeOwnerOfSettlementAction.ApplyByBarter(
-                    proposer.Leader,
+                    settlementRecipient.Leader,
                     proposal.CededSettlement);
             }
 
+            Settlement settlementFromTarget = isOffer
+                ? proposal.ProposerSettlementToExchange
+                : proposal.TargetSettlementToExchange;
+            Settlement settlementFromProposer = isOffer
+                ? proposal.TargetSettlementToExchange
+                : proposal.ProposerSettlementToExchange;
             if (options.HasFlag(PeaceDealOptions.TerritoryExchange) &&
-                IsSettlementOwnedBy(proposal.TargetSettlementToExchange, target) &&
-                IsSettlementOwnedBy(proposal.ProposerSettlementToExchange, proposer))
+                IsSettlementOwnedBy(settlementFromTarget, target) &&
+                IsSettlementOwnedBy(settlementFromProposer, proposer))
             {
                 ChangeOwnerOfSettlementAction.ApplyByBarter(
-                    proposer.Leader,
-                    proposal.TargetSettlementToExchange);
+                    isOffer ? target.Leader : proposer.Leader,
+                    settlementFromTarget);
                 ChangeOwnerOfSettlementAction.ApplyByBarter(
-                    target.Leader,
-                    proposal.ProposerSettlementToExchange);
+                    isOffer ? proposer.Leader : target.Leader,
+                    settlementFromProposer);
             }
 
             if (options.HasFlag(PeaceDealOptions.ClaimThrone) &&
-                proposer.RulingClan != null)
+                (isOffer ? target.RulingClan : proposer.RulingClan) != null)
             {
-                ChangeRulingClanAction.Apply(target, proposer.RulingClan);
+                Kingdom kingdomLosingItsRuler = isOffer ? proposer : target;
+                Clan newRulingClan = isOffer ? target.RulingClan : proposer.RulingClan;
+                ChangeRulingClanAction.Apply(kingdomLosingItsRuler, newRulingClan);
             }
 
             if (options.HasFlag(PeaceDealOptions.GainIndependence))
@@ -256,15 +290,18 @@ namespace BannerlordPlusPlus
                 }
             }
 
+            Hero executedRuler = isOffer ? proposer.Leader : target.Leader;
+            Hero executioner = isOffer ? target.Leader : proposer.Leader;
             if (options.HasFlag(PeaceDealOptions.ExecuteRuler) &&
-                target.Leader != null &&
-                target.Leader.IsAlive)
+                executedRuler != null &&
+                executedRuler.IsAlive &&
+                executioner != null)
             {
-                KillCharacterAction.ApplyByExecution(target.Leader, proposer.Leader);
+                KillCharacterAction.ApplyByExecution(executedRuler, executioner);
             }
 
             InformationManager.DisplayMessage(new InformationMessage(
-                $"Peace accepted by {target.Name}. The agreed treaty terms have taken effect.",
+                $"Peace accepted by {target.Name}. The {(isOffer ? "offer" : "demand")} terms have taken effect.",
                 Colors.Green));
         }
 
@@ -287,9 +324,19 @@ namespace BannerlordPlusPlus
             }
         }
 
+        private void OnMakePeace(
+            IFaction faction1,
+            IFaction faction2,
+            MakePeaceAction.MakePeaceDetail detail)
+        {
+            if (faction1 is Kingdom kingdom1 && faction2 is Kingdom kingdom2)
+                AddTruce(kingdom1, kingdom2, 100.0);
+        }
+
         private void OnDailyTick()
         {
-            _activeTruces.RemoveAll(a => a == null || a.IsExpired);
+            ResolveDuePeaceProposals();
+            _activeTruces?.RemoveAll(a => a == null || a.IsExpired);
 
             List<string> winnerIds = _reparationTargets.Keys.ToList();
             foreach (var winnerId in winnerIds)
@@ -324,6 +371,77 @@ namespace BannerlordPlusPlus
 
                 TreasuryBehavior.AddToTreasury(loser, -reparationAmount);
                 TreasuryBehavior.AddToTreasury(winner, reparationAmount);
+            }
+        }
+
+        private void ResolveDuePeaceProposals()
+        {
+            if (_pendingProposals == null || _pendingProposals.Count == 0)
+                return;
+
+            float currentDay = (float)CampaignTime.Now.ToDays;
+            foreach (PeaceProposalTerms proposal in _pendingProposals.ToList())
+            {
+                if (proposal == null)
+                {
+                    _pendingProposals.Remove(proposal);
+                    continue;
+                }
+
+                Kingdom proposer = proposal.ProposerKingdom;
+                Kingdom target = proposal.TargetKingdom;
+                Clan targetRulingClan = target?.RulingClan;
+                float proposalAge = currentDay - proposal.SubmittedAtDays;
+                if (proposalAge > PendingProposalExpirationDays &&
+                    proposer != null &&
+                    proposer == Clan.PlayerClan?.Kingdom)
+                {
+                    InformationManager.DisplayMessage(new InformationMessage(
+                        $"The peace proposal to {target?.Name} expired without a council decision.",
+                        Colors.Yellow));
+                }
+
+                if (proposer == null ||
+                    target == null ||
+                    proposer.IsEliminated ||
+                    target.IsEliminated ||
+                    !proposer.IsAtWarWith(target) ||
+                    proposalAge > PendingProposalExpirationDays ||
+                    targetRulingClan == null ||
+                    targetRulingClan.Kingdom != target)
+                {
+                    _pendingProposals.Remove(proposal);
+                    continue;
+                }
+
+                if (currentDay - proposal.LastResolutionAttemptDays < 2f)
+                    continue;
+
+                proposal.LastResolutionAttemptDays = currentDay;
+                var decision = new MakePeaceKingdomDecision(
+                    targetRulingClan,
+                    proposer,
+                    proposal.DailyTributeFromTargetToProposer,
+                    proposal.DailyTributeDurationDays,
+                    applyResults: true,
+                    isProposedByOpponent: true);
+                var election = new KingdomElection(decision);
+                election.StartElection();
+                if (_pendingProposals.Contains(proposal))
+                {
+                    DecisionOutcome outcome = GetAiChoiceMethod.Invoke(
+                        election,
+                        new object[] { election.PossibleOutcomes }) as DecisionOutcome;
+                    if (outcome == null)
+                    {
+                        InformationManager.DisplayMessage(new InformationMessage(
+                            $"The council of {target.Name} could not resolve the peace proposal.",
+                            Colors.Red));
+                        continue;
+                    }
+
+                    decision.ApplyChosenOutcome(outcome);
+                }
             }
         }
     }

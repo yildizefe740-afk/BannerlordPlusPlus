@@ -16,7 +16,7 @@ namespace BannerlordPlusPlus
         public PeaceDealOptions SelectedOptions;
 
         [SaveableField(4)]
-        public int DailyTributeToTarget;
+        public int DailyTributeFromTargetToProposer;
 
         [SaveableField(5)]
         public int DailyTributeDurationDays;
@@ -32,6 +32,15 @@ namespace BannerlordPlusPlus
 
         [SaveableField(9)]
         public SubjectType TargetSubjectType;
+
+        [SaveableField(10)]
+        public float SubmittedAtDays;
+
+        [SaveableField(11)]
+        public bool IsOffer;
+
+        [SaveableField(12)]
+        public float LastResolutionAttemptDays;
 
         public PeaceProposalTerms()
         {

@@ -20,7 +20,8 @@ namespace BannerlordPlusPlus
         
         [SaveableProperty(5)]
         public Settlement CededSettlement { get; set; }
-        public SubjectType TargetSubjectType;
+        [SaveableProperty(9)]
+        public SubjectType TargetSubjectType { get; set; }
 
         // Truce duration tracking.
         

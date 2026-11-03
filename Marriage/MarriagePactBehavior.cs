@@ -59,5 +59,17 @@ namespace BannerlordPlusPlus
                 _marriages.Add(pact);
             }
         }
+
+        public bool HasMarriagePact(Kingdom kingdom1, Kingdom kingdom2)
+        {
+            return _marriages != null &&
+                   kingdom1 != null &&
+                   kingdom2 != null &&
+                   _marriages.Exists(pact =>
+                       pact != null &&
+                       pact.IsValid &&
+                       ((pact.Kingdom1 == kingdom1 && pact.Kingdom2 == kingdom2) ||
+                        (pact.Kingdom1 == kingdom2 && pact.Kingdom2 == kingdom1)));
+        }
     }
 }

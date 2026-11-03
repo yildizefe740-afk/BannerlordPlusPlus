@@ -33,6 +33,7 @@ namespace BannerlordPlusPlus
                 starter.AddBehavior(new NonAggressionPactBehavior());
                 starter.AddBehavior(new TreasuryBehavior());
                 starter.AddBehavior(new CustomPeaceBehavior());
+                starter.AddBehavior(new AiPeaceProposalBehavior());
                 starter.AddBehavior(new MarriagePactBehavior());
                 starter.AddBehavior(new GiftBehavior());
             }

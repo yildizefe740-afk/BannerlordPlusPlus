@@ -50,6 +50,14 @@ namespace BannerlordPlusPlus
             _activeTruces ??= new List<PeaceAgreement>();
             _reparationTargets ??= new Dictionary<string, string>();
             _pendingProposals ??= new List<PeaceProposalTerms>();
+            if (dataStore.IsLoading)
+            {
+                foreach (PeaceProposalTerms proposal in _pendingProposals)
+                {
+                    if (proposal != null)
+                        proposal.IsAwaitingPlayerResponse = false;
+                }
+            }
         }
 
         public bool HasActiveTruce(Kingdom k1, Kingdom k2)
@@ -186,6 +194,16 @@ namespace BannerlordPlusPlus
         public bool HasPendingProposal(MakePeaceKingdomDecision decision)
         {
             return GetPendingProposal(decision) != null;
+        }
+
+        public bool HasPendingProposal(Kingdom kingdom1, Kingdom kingdom2)
+        {
+            return kingdom1 != null &&
+                   kingdom2 != null &&
+                   _pendingProposals != null &&
+                   _pendingProposals.Any(proposal =>
+                       proposal != null &&
+                       proposal.Involves(kingdom1, kingdom2));
         }
 
         public void ResolvePeaceProposal(
@@ -425,6 +443,16 @@ namespace BannerlordPlusPlus
                     proposal.DailyTributeDurationDays,
                     applyResults: true,
                     isProposedByOpponent: true);
+
+                if (proposal.IsAiGenerated &&
+                    target == Clan.PlayerClan?.Kingdom &&
+                    target.RulingClan == Clan.PlayerClan)
+                {
+                    if (!proposal.IsAwaitingPlayerResponse)
+                        ShowPlayerPeaceProposal(proposal, decision);
+                    continue;
+                }
+
                 var election = new KingdomElection(decision);
                 election.StartElection();
                 if (_pendingProposals.Contains(proposal))
@@ -443,6 +471,73 @@ namespace BannerlordPlusPlus
                     decision.ApplyChosenOutcome(outcome);
                 }
             }
+        }
+
+        private void ShowPlayerPeaceProposal(
+            PeaceProposalTerms proposal,
+            MakePeaceKingdomDecision decision)
+        {
+            MakePeaceKingdomDecision.MakePeaceDecisionOutcome acceptedOutcome =
+                decision.DetermineInitialCandidates()
+                    .OfType<MakePeaceKingdomDecision.MakePeaceDecisionOutcome>()
+                    .FirstOrDefault(outcome => outcome.ShouldPeaceBeDeclared);
+            MakePeaceKingdomDecision.MakePeaceDecisionOutcome rejectedOutcome =
+                decision.DetermineInitialCandidates()
+                    .OfType<MakePeaceKingdomDecision.MakePeaceDecisionOutcome>()
+                    .FirstOrDefault(outcome => !outcome.ShouldPeaceBeDeclared);
+
+            if (acceptedOutcome == null || rejectedOutcome == null)
+            {
+                _pendingProposals.Remove(proposal);
+                InformationManager.DisplayMessage(new InformationMessage(
+                    $"Could not prepare the peace proposal from {proposal.ProposerKingdom.Name}.",
+                    Colors.Red));
+                return;
+            }
+
+            proposal.IsAwaitingPlayerResponse = true;
+            string tributeText = proposal.DailyTributeFromTargetToProposer == 0
+                ? "No tribute is requested."
+                : proposal.DailyTributeFromTargetToProposer > 0
+                    ? $"Your kingdom pays {proposal.DailyTributeFromTargetToProposer:N0} gold per day for {proposal.DailyTributeDurationDays} days."
+                    : $"They pay your kingdom {-proposal.DailyTributeFromTargetToProposer:N0} gold per day for {proposal.DailyTributeDurationDays} days.";
+            string proposalText =
+                $"{proposal.ProposerKingdom.Name} proposes peace. {tributeText} " +
+                "The agreement includes a 200-day truce if accepted.";
+
+            InformationManager.ShowInquiry(new InquiryData(
+                $"Peace proposal from {proposal.ProposerKingdom.Name}",
+                proposalText,
+                true,
+                true,
+                "Accept",
+                "Reject",
+                () => ResolvePlayerPeaceProposal(proposal, decision, acceptedOutcome),
+                () => ResolvePlayerPeaceProposal(proposal, decision, rejectedOutcome)), true, true);
+        }
+
+        private void ResolvePlayerPeaceProposal(
+            PeaceProposalTerms proposal,
+            MakePeaceKingdomDecision decision,
+            MakePeaceKingdomDecision.MakePeaceDecisionOutcome outcome)
+        {
+            if (!_pendingProposals.Contains(proposal))
+                return;
+
+            Kingdom proposer = proposal.ProposerKingdom;
+            Kingdom target = proposal.TargetKingdom;
+            if (proposer == null ||
+                target == null ||
+                proposer.IsEliminated ||
+                target.IsEliminated ||
+                !proposer.IsAtWarWith(target))
+            {
+                _pendingProposals.Remove(proposal);
+                return;
+            }
+
+            proposal.IsAwaitingPlayerResponse = false;
+            decision.ApplyChosenOutcome(outcome);
         }
     }
 }

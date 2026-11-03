@@ -31,6 +31,7 @@ namespace BannerlordPlusPlus
             // Collection types used by SyncData.
             ConstructContainerDefinition(typeof(Dictionary<string, SubjectAttributes>));
             ConstructContainerDefinition(typeof(Dictionary<string, string>));
+            ConstructContainerDefinition(typeof(Dictionary<string, double>));
             ConstructContainerDefinition(typeof(List<DefensivePact>));
             ConstructContainerDefinition(typeof(List<TradeAgreement>));
             ConstructContainerDefinition(typeof(List<PeaceAgreement>));

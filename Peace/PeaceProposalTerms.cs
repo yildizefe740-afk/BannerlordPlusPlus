@@ -42,6 +42,12 @@ namespace BannerlordPlusPlus
         [SaveableField(12)]
         public float LastResolutionAttemptDays;
 
+        [SaveableField(13)]
+        public bool IsAiGenerated;
+
+        [SaveableField(14)]
+        public bool IsAwaitingPlayerResponse;
+
         public PeaceProposalTerms()
         {
         }
